@@ -2,8 +2,16 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
-import { Menu } from 'lucide-react';
+import { Menu, LogOut, User } from 'lucide-react';
 import CustomButton from './CustomButton';
+import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -11,6 +19,15 @@ interface AppLayoutProps {
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { currentUser, logout } = useAuth();
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Failed to log out', error);
+    }
+  };
   
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -22,17 +39,43 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         "flex-1 flex flex-col overflow-hidden transition-all duration-300",
         sidebarOpen ? "md:ml-64" : "ml-0"
       )}>
-        {/* Mobile header with menu button */}
-        <header className="md:hidden flex items-center px-4 h-14 border-b">
-          <CustomButton 
-            variant="ghost" 
-            size="sm" 
-            className="mr-2"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <Menu className="h-5 w-5" />
-          </CustomButton>
-          <h1 className="text-xl font-semibold">Selflo</h1>
+        {/* Header with menu button and user profile */}
+        <header className="flex items-center justify-between px-4 h-14 border-b">
+          <div className="flex items-center">
+            <CustomButton 
+              variant="ghost" 
+              size="sm" 
+              className="mr-2 md:hidden"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <Menu className="h-5 w-5" />
+            </CustomButton>
+            <h1 className="text-xl font-semibold">Selflo</h1>
+          </div>
+          
+          {currentUser && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="outline-none">
+                  <Avatar className="h-8 w-8 cursor-pointer">
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {currentUser.email?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem disabled className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>{currentUser.email}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive flex items-center gap-2">
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </header>
         
         {/* Page Content */}

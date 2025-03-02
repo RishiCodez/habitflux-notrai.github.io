@@ -1,0 +1,205 @@
+
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import CustomButton from '@/components/CustomButton';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import { auth } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+
+const LandingPage = () => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      toast.error('Please enter both email and password');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast.success('Signed in successfully!');
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      toast.error(error.message || 'Failed to sign in');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async () => {
+    if (!email || !password) {
+      toast.error('Please enter both email and password');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      toast.success('Account created successfully!');
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      toast.error(error.message || 'Failed to create account');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-accent">
+      {/* Hero Section */}
+      <header className="container mx-auto py-6 px-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Selflo</h1>
+        <nav className="hidden md:block">
+          <ul className="flex space-x-8">
+            <li><a href="#features" className="text-foreground/80 hover:text-foreground transition-colors">Features</a></li>
+            <li><a href="#pricing" className="text-foreground/80 hover:text-foreground transition-colors">Pricing</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      <main className="flex-1 container mx-auto px-4 py-12 md:py-24 flex flex-col md:flex-row items-center justify-between gap-12">
+        <div className="md:w-1/2 space-y-6 text-left animate-fade-up">
+          <h1 className="text-4xl md:text-6xl font-bold leading-tight">
+            Your Personal Productivity & Learning Assistant
+          </h1>
+          <p className="text-xl text-foreground/80 max-w-lg">
+            Plan your day, focus on tasks, and reflect on your progress with AI-powered assistance.
+          </p>
+          <div className="pt-4">
+            <CustomButton 
+              size="lg" 
+              onClick={() => document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              Get Started
+            </CustomButton>
+          </div>
+        </div>
+
+        <div id="auth-section" className="md:w-5/12 w-full max-w-md glass-card rounded-xl p-6 animate-fade-up animation-delay-200">
+          <Tabs defaultValue="signin" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="signin">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="signin" className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium text-left block">Email</label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="youremail@example.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium text-left block">Password</label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <CustomButton 
+                className="w-full mt-4" 
+                onClick={handleSignIn}
+                disabled={loading}
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </CustomButton>
+            </TabsContent>
+            
+            <TabsContent value="signup" className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="new-email" className="text-sm font-medium text-left block">Email</label>
+                <Input 
+                  id="new-email" 
+                  type="email" 
+                  placeholder="youremail@example.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="new-password" className="text-sm font-medium text-left block">Password</label>
+                <Input 
+                  id="new-password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <CustomButton 
+                className="w-full mt-4" 
+                onClick={handleSignUp}
+                disabled={loading}
+              >
+                {loading ? 'Creating account...' : 'Create Account'}
+              </CustomButton>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
+
+      {/* Features Section */}
+      <section id="features" className="py-20 bg-accent/30">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">Features</h2>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="glass-card p-6 rounded-lg animate-fade-up">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Task Management</h3>
+              <p className="text-foreground/70">Create, organize, and track your tasks with our intuitive interface.</p>
+            </div>
+            
+            <div className="glass-card p-6 rounded-lg animate-fade-up animation-delay-200">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Pomodoro Timer</h3>
+              <p className="text-foreground/70">Focus better with customizable Pomodoro sessions.</p>
+            </div>
+            
+            <div className="glass-card p-6 rounded-lg animate-fade-up animation-delay-400">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Daily Planner</h3>
+              <p className="text-foreground/70">Plan your day efficiently with our AI-powered planner.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 border-t">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-foreground/60">© {new Date().getFullYear()} Selflo. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default LandingPage;
