@@ -25,17 +25,25 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   const [cycles, setCycles] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
   
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const focusAlarmRef = useRef<HTMLAudioElement | null>(null);
+  const breakAlarmRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   
-  // Initialize audio element
+  // Initialize audio elements
   useEffect(() => {
-    audioRef.current = new Audio('/notification.mp3');
-    audioRef.current.volume = 0.7;
+    // Using Google alarm sounds via direct URLs
+    focusAlarmRef.current = new Audio('https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg');
+    breakAlarmRef.current = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    
+    focusAlarmRef.current.volume = 0.7;
+    breakAlarmRef.current.volume = 0.7;
     
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
+      if (focusAlarmRef.current) {
+        focusAlarmRef.current.pause();
+      }
+      if (breakAlarmRef.current) {
+        breakAlarmRef.current.pause();
       }
     };
   }, []);
@@ -56,9 +64,9 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       }, 1000);
     } else if (isActive && timeLeft === 0) {
       if (mode === 'work') {
-        // Play sound when timer ends
-        if (soundEnabled && audioRef.current) {
-          audioRef.current.play().catch(e => console.error("Could not play sound:", e));
+        // Play focus-end alarm when timer ends
+        if (soundEnabled && focusAlarmRef.current) {
+          focusAlarmRef.current.play().catch(e => console.error("Could not play sound:", e));
         }
         
         // Show browser notification
@@ -77,27 +85,32 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         if (onSessionComplete) {
           onSessionComplete(workMinutes);
         }
+        
+        // Switch to break mode
         setMode('break');
         setTimeLeft(breakMinutes * 60);
         setCycles(cycles + 1);
       } else {
-        // Play sound when break ends
-        if (soundEnabled && audioRef.current) {
-          audioRef.current.play().catch(e => console.error("Could not play sound:", e));
+        // Play break-end alarm when break ends
+        if (soundEnabled && breakAlarmRef.current) {
+          breakAlarmRef.current.play().catch(e => console.error("Could not play sound:", e));
         }
         
         // Show browser notification
         if ("Notification" in window && Notification.permission === "granted") {
-          new Notification("Back to work!", {
-            body: "Focus time begins now.",
+          new Notification("Break finished!", {
+            body: "Your break has ended. Start a new session when ready.",
             icon: "/favicon.ico"
           });
         }
         
         toast({
-          title: "Back to work!",
-          description: "Focus time begins now.",
+          title: "Break finished!",
+          description: "Your break has ended. Start a new session when ready.",
         });
+        
+        // Stop the timer and reset to work mode
+        setIsActive(false);
         setMode('work');
         setTimeLeft(workMinutes * 60);
       }
@@ -250,7 +263,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
               value={workMinutes}
               onChange={handleWorkMinutesChange}
               disabled={isActive}
-              className="w-full px-3 py-1 text-sm border rounded-md"
+              className="w-full px-3 py-1 text-sm border rounded-md dark:bg-gray-800 dark:text-white dark:border-gray-700"
             />
           </div>
           <div>
@@ -265,7 +278,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
               value={breakMinutes}
               onChange={handleBreakMinutesChange}
               disabled={isActive}
-              className="w-full px-3 py-1 text-sm border rounded-md"
+              className="w-full px-3 py-1 text-sm border rounded-md dark:bg-gray-800 dark:text-white dark:border-gray-700"
             />
           </div>
         </div>
