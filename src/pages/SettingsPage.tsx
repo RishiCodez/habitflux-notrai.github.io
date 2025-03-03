@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppLayout from '../components/AppLayout';
 import { Moon, Sun, Bell, User, Clock, Palette, Save } from 'lucide-react';
 import CustomButton from '../components/CustomButton';
 import { useToast } from '@/hooks/use-toast';
+import { saveTheme, loadTheme, saveFocusTime, loadFocusTime } from '../utils/localStorageUtils';
 
 const SettingsPage: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -21,7 +22,37 @@ const SettingsPage: React.FC = () => {
   
   const { toast } = useToast();
   
+  // Load theme from local storage on component mount
+  useEffect(() => {
+    const savedTheme = loadTheme();
+    setDarkMode(savedTheme);
+    
+    // Apply the theme to the document
+    if (savedTheme) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+  
+  // Handle dark mode toggle
+  const handleDarkModeToggle = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    saveTheme(newDarkMode);
+    
+    // Apply the theme to the document
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+  
   const handleSaveSettings = () => {
+    // Save settings to local storage
+    saveTheme(darkMode);
+    
     // In a real application, this would save to backend/localStorage
     toast({
       title: "Settings saved",
@@ -57,7 +88,7 @@ const SettingsPage: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={darkMode}
-                      onChange={() => setDarkMode(!darkMode)}
+                      onChange={handleDarkModeToggle}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>

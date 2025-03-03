@@ -13,11 +13,23 @@ import AssistantPage from "./pages/AssistantPage";
 import SettingsPage from "./pages/SettingsPage";
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
+import { loadTheme } from "./utils/localStorageUtils";
 import './App.css';
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  // Initialize theme from local storage on app load
+  useEffect(() => {
+    const darkMode = loadTheme();
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

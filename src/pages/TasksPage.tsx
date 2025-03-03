@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Plus, Search, Filter, ListFilter } from 'lucide-react';
@@ -7,6 +6,7 @@ import TaskCard, { Task } from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
 import CustomButton from '../components/CustomButton';
 import { useToast } from '@/hooks/use-toast';
+import { saveTasks, loadTasks } from '../utils/localStorageUtils';
 
 const sampleTasks: Task[] = [
   {
@@ -38,7 +38,7 @@ const sampleTasks: Task[] = [
 ];
 
 const TasksPage: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>(sampleTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,44 +47,55 @@ const TasksPage: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState<'low' | 'medium' | 'high' | null>(null);
   
   const { toast } = useToast();
-  
-  // Get unique projects for filtering
+
+  useEffect(() => {
+    const savedTasks = loadTasks();
+    if (savedTasks) {
+      setTasks(savedTasks);
+    } else {
+      setTasks(sampleTasks);
+      saveTasks(sampleTasks);
+    }
+  }, []);
+
   const projects = Array.from(new Set(tasks.map(task => task.project).filter(Boolean)));
   
   const filteredTasks = tasks.filter(task => {
-    // Search filter
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (task.description?.toLowerCase().includes(searchQuery.toLowerCase()) || false);
     
-    // Completion status filter
     const matchesStatus = 
       filter === 'all' ? true :
       filter === 'active' ? !task.completed :
       task.completed;
     
-    // Project filter
     const matchesProject = !projectFilter || task.project === projectFilter;
     
-    // Priority filter
     const matchesPriority = !priorityFilter || task.priority === priorityFilter;
     
     return matchesSearch && matchesStatus && matchesProject && matchesPriority;
   });
   
   const handleAddTask = (task: Task) => {
+    let updatedTasks;
+    
     if (editingTask) {
-      setTasks(tasks.map(t => t.id === task.id ? task : t));
+      updatedTasks = tasks.map(t => t.id === task.id ? task : t);
+      setTasks(updatedTasks);
       toast({
         title: "Task updated",
         description: "Your task has been successfully updated.",
       });
     } else {
-      setTasks([...tasks, task]);
+      updatedTasks = [...tasks, task];
+      setTasks(updatedTasks);
       toast({
         title: "Task added",
         description: "Your new task has been successfully created.",
       });
     }
+    
+    saveTasks(updatedTasks);
     setShowForm(false);
     setEditingTask(undefined);
   };
@@ -95,7 +106,9 @@ const TasksPage: React.FC = () => {
   };
   
   const handleDeleteTask = (id: string) => {
-    setTasks(tasks.filter(task => task.id !== id));
+    const updatedTasks = tasks.filter(task => task.id !== id);
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
     toast({
       title: "Task deleted",
       description: "Your task has been successfully removed.",
@@ -103,9 +116,11 @@ const TasksPage: React.FC = () => {
   };
   
   const handleCompleteTask = (id: string) => {
-    setTasks(tasks.map(task => 
+    const updatedTasks = tasks.map(task => 
       task.id === id ? { ...task, completed: !task.completed } : task
-    ));
+    );
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
   };
   
   return (
@@ -118,7 +133,6 @@ const TasksPage: React.FC = () => {
         </CustomButton>
       </div>
       
-      {/* Filters */}
       <div className="mb-6 space-y-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
@@ -170,7 +184,6 @@ const TasksPage: React.FC = () => {
         </div>
       </div>
       
-      {/* Add/Edit Task Form */}
       {showForm && (
         <div className="mb-6 glass-card p-6 rounded-xl">
           <h2 className="text-xl font-semibold mb-4">
@@ -187,7 +200,6 @@ const TasksPage: React.FC = () => {
         </div>
       )}
       
-      {/* Task List */}
       <div className="space-y-4">
         {filteredTasks.length > 0 ? (
           filteredTasks.map((task) => (

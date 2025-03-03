@@ -1,66 +1,51 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
-import { CheckCircle, Circle, Clock, Calendar, BarChart3, BookOpen } from 'lucide-react';
+import { CheckCircle, Circle, Clock, Calendar, BarChart3, BookOpen, Edit } from 'lucide-react';
 import TaskCard, { Task } from '../components/TaskCard';
 import CustomButton from '../components/CustomButton';
 import { useToast } from '@/hooks/use-toast';
 import PomodoroTimer from '../components/PomodoroTimer';
+import { loadTasks, saveTasks, loadFocusTime, saveFocusTime, loadReflections, saveReflection } from '../utils/localStorageUtils';
+import ReflectionForm from '../components/ReflectionForm';
 
-// Sample tasks for demonstration
-const sampleTasks: Task[] = [
-  {
-    id: '1',
-    title: 'Complete project proposal',
-    description: 'Draft the initial proposal for the new client project',
-    completed: false,
-    priority: 'high',
-    dueDate: '2023-07-15',
-    project: 'Work'
-  },
-  {
-    id: '2',
-    title: 'Schedule team meeting',
-    description: 'Coordinate with team members for the weekly sync',
-    completed: false,
-    priority: 'medium',
-    project: 'Work'
-  },
-  {
-    id: '3',
-    title: 'Grocery shopping',
-    description: 'Buy vegetables, fruits, and other essentials',
-    completed: true,
-    priority: 'low',
-    dueDate: '2023-07-10',
-    project: 'Personal'
-  },
-  {
-    id: '4',
-    title: 'Review documentation',
-    description: 'Go through the latest documentation updates',
-    completed: true,
-    priority: 'medium',
-    project: 'Work'
-  }
-];
-
-// Sample reflections for demonstration
-const sampleReflections = [
-  {
-    id: '1',
-    date: '2023-07-09',
-    accomplishments: 'Completed the website design, had a productive meeting with the team.',
-    challenges: 'Got distracted during the afternoon session, need to work on focus.',
-    insights: 'Breaking tasks into smaller chunks helps me maintain focus and momentum.'
-  }
-];
+// Sample reflection for demonstration
+const sampleReflection = {
+  id: '1',
+  date: new Date().toISOString(),
+  accomplishments: 'Completed the website design, had a productive meeting with the team.',
+  challenges: 'Got distracted during the afternoon session, need to work on focus.',
+  insights: 'Breaking tasks into smaller chunks helps me maintain focus and momentum.'
+};
 
 const DashboardPage: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>(sampleTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [focusTime, setFocusTime] = useState(0); // Total focus time in minutes
+  const [showReflectionForm, setShowReflectionForm] = useState(false);
+  const [todayReflection, setTodayReflection] = useState<any>(null);
   const { toast } = useToast();
+  
+  // Load data from local storage on component mount
+  useEffect(() => {
+    // Load tasks
+    const savedTasks = loadTasks();
+    if (savedTasks) {
+      setTasks(savedTasks);
+    }
+    
+    // Load focus time
+    const savedFocusTime = loadFocusTime();
+    setFocusTime(savedFocusTime);
+    
+    // Load today's reflection if it exists
+    const reflections = loadReflections() || [];
+    const today = new Date().toISOString().split('T')[0];
+    const todaysReflection = reflections.find((r: any) => r.date.split('T')[0] === today);
+    if (todaysReflection) {
+      setTodayReflection(todaysReflection);
+    }
+  }, []);
   
   // Calculate stats for the dashboard
   const completedTasks = tasks.filter(task => task.completed).length;
@@ -74,11 +59,12 @@ const DashboardPage: React.FC = () => {
   
   // Function to handle task completion
   const handleCompleteTask = (id: string) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
+    const updatedTasks = tasks.map(task =>
+      task.id === id ? { ...task, completed: !task.completed } : task
     );
+    
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks); // Save to local storage
     
     toast({
       title: "Task updated",
@@ -88,10 +74,25 @@ const DashboardPage: React.FC = () => {
   
   // Function to track focus time
   const handleFocusSessionComplete = (minutes: number) => {
-    setFocusTime(prev => prev + minutes);
+    const newFocusTime = focusTime + minutes;
+    setFocusTime(newFocusTime);
+    saveFocusTime(minutes); // Save to local storage
+    
     toast({
       title: "Focus session completed",
       description: `You've completed a ${minutes} minute focus session!`,
+    });
+  };
+
+  // Function to handle reflection submission
+  const handleReflectionSubmit = (reflection: any) => {
+    setTodayReflection(reflection);
+    saveReflection(reflection);
+    setShowReflectionForm(false);
+    
+    toast({
+      title: "Reflection saved",
+      description: "Your daily reflection has been saved.",
     });
   };
   
@@ -166,7 +167,7 @@ const DashboardPage: React.FC = () => {
           </div>
           
           <div className="space-y-4">
-            {tasks.map((task) => (
+            {tasks.slice(0, 4).map((task) => (
               <TaskCard
                 key={task.id}
                 task={task}
@@ -176,7 +177,7 @@ const DashboardPage: React.FC = () => {
               />
             ))}
             
-            <CustomButton className="w-full" variant="outline">
+            <CustomButton className="w-full" variant="outline" onClick={() => window.location.href = '/tasks'}>
               View All Tasks
             </CustomButton>
           </div>
@@ -195,21 +196,35 @@ const DashboardPage: React.FC = () => {
           
           {/* Daily Reflection */}
           <div className="glass-card p-6 rounded-xl">
-            <div className="flex items-center space-x-2 mb-4">
-              <BookOpen className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">Daily Reflection</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <BookOpen className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold">Daily Reflection</h2>
+              </div>
+              {todayReflection && (
+                <CustomButton variant="outline" size="sm" onClick={() => setShowReflectionForm(true)}>
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </CustomButton>
+              )}
             </div>
             
-            {sampleReflections.length > 0 ? (
+            {showReflectionForm ? (
+              <ReflectionForm 
+                onSubmit={handleReflectionSubmit}
+                onCancel={() => setShowReflectionForm(false)}
+                initialData={todayReflection}
+              />
+            ) : todayReflection ? (
               <div>
                 <p className="text-sm mb-2">
-                  <span className="font-medium">Accomplishments:</span> {sampleReflections[0].accomplishments}
+                  <span className="font-medium">Accomplishments:</span> {todayReflection.accomplishments}
                 </p>
                 <p className="text-sm mb-2">
-                  <span className="font-medium">Challenges:</span> {sampleReflections[0].challenges}
+                  <span className="font-medium">Challenges:</span> {todayReflection.challenges}
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium">Insights:</span> {sampleReflections[0].insights}
+                  <span className="font-medium">Insights:</span> {todayReflection.insights}
                 </p>
               </div>
             ) : (
@@ -217,7 +232,7 @@ const DashboardPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground mb-3">
                   No reflection for today yet. Take a moment to reflect on your day.
                 </p>
-                <CustomButton size="sm">
+                <CustomButton size="sm" onClick={() => setShowReflectionForm(true)}>
                   Add Reflection
                 </CustomButton>
               </div>
