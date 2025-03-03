@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
-import { Menu, LogOut, User } from 'lucide-react';
+import { Menu, LogOut } from 'lucide-react';
 import CustomButton from './CustomButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -19,7 +19,7 @@ interface AppLayoutProps {
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { currentUser, logout } = useAuth();
+  const { logout } = useAuth();
   
   const handleLogout = async () => {
     try {
@@ -53,29 +53,23 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <h1 className="text-xl font-semibold">Selflo</h1>
           </div>
           
-          {currentUser && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="outline-none">
-                  <Avatar className="h-8 w-8 cursor-pointer">
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {currentUser.email?.charAt(0).toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <span>{currentUser.email}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive flex items-center gap-2">
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="outline-none">
+                <Avatar className="h-8 w-8 cursor-pointer">
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    U
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive flex items-center gap-2">
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
         
         {/* Page Content */}

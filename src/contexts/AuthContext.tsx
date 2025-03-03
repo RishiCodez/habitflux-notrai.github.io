@@ -3,8 +3,13 @@ import React, { createContext, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+interface User {
+  displayName?: string;
+  email?: string;
+}
+
 interface AuthContextType {
-  currentUser: null;
+  currentUser: User | null;
   loading: boolean;
   logout: () => Promise<void>;
   firebaseInitialized: boolean;
