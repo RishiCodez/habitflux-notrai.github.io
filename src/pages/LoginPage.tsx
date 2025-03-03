@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -43,9 +42,8 @@ const LoginPage: React.FC = () => {
   const handleGuestLogin = async () => {
     try {
       await loginAsGuest();
-      toast({
-        title: "Welcome!",
-        description: "You've logged in as a guest. Enjoy exploring the app!",
+      toast("Welcome!", {
+        description: "You've logged in as a guest. Enjoy exploring the app!"
       });
     } catch (error) {
       // Error handling is done in the loginAsGuest function
