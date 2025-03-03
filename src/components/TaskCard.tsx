@@ -12,6 +12,7 @@ export interface Task {
   priority: 'low' | 'medium' | 'high';
   dueDate?: string;
   project?: string;
+  listId?: string;  // Added listId property
 }
 
 interface TaskCardProps {
