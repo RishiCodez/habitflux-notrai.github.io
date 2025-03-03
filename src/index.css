@@ -120,11 +120,16 @@
   ::selection {
     @apply bg-primary/10 text-primary;
   }
+  
+  /* Fix input colors in dark mode */
+  .dark input, .dark select, .dark textarea {
+    @apply bg-gray-800 border-gray-700 text-white;
+  }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-white/80 dark:bg-black/80 backdrop-blur-lg border border-white/20 dark:border-black/20 shadow-lg;
+    @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border border-white/20 dark:border-gray-800/50 shadow-lg;
   }
   
   .glass-effect {

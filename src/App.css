@@ -49,7 +49,7 @@
 }
 
 .dark .glass-card {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(17, 24, 39, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -62,7 +62,7 @@
 }
 
 .dark .glass-effect {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(17, 24, 39, 0.7);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -85,4 +85,14 @@
 
 .animation-delay-500 {
   animation-delay: 500ms;
+}
+
+/* Dark mode fixes */
+.dark .bg-white {
+  background-color: #1f2937 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgba(156, 163, 175, 0.5);
 }

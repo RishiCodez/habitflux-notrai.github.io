@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
-import { Calendar, ChevronLeft, ChevronRight, Clock, PlusCircle } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, PlusCircle, X } from 'lucide-react';
 import CustomButton from '../components/CustomButton';
+import { loadEvents, saveEvents } from '../utils/localStorageUtils';
+import { useToast } from '@/hooks/use-toast';
 
 interface Event {
   id: string;
@@ -13,7 +15,7 @@ interface Event {
   category: 'work' | 'personal' | 'focus' | 'meeting';
 }
 
-const sampleEvents: Event[] = [
+const defaultEvents: Event[] = [
   {
     id: '1',
     title: 'Team Meeting',
@@ -52,8 +54,28 @@ const sampleEvents: Event[] = [
 ];
 
 const PlannerPage: React.FC = () => {
-  const [events] = useState<Event[]>(sampleEvents);
+  const [events, setEvents] = useState<Event[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [newEvent, setNewEvent] = useState<Partial<Event>>({
+    title: '',
+    start: '09:00',
+    end: '10:00',
+    category: 'work'
+  });
+  
+  const { toast } = useToast();
+  
+  // Load events from local storage on component mount
+  useEffect(() => {
+    const savedEvents = loadEvents();
+    if (savedEvents) {
+      setEvents(savedEvents);
+    } else {
+      setEvents(defaultEvents);
+      saveEvents(defaultEvents);
+    }
+  }, []);
   
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const hoursOfDay = Array.from({ length: 12 }, (_, i) => i + 8); // 8 AM to 7 PM
@@ -92,6 +114,54 @@ const PlannerPage: React.FC = () => {
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
+
+  const handleAddEvent = () => {
+    if (!newEvent.title || !newEvent.start || !newEvent.end || !newEvent.category) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const updatedEvents = [
+      ...events,
+      {
+        id: Date.now().toString(),
+        title: newEvent.title,
+        start: newEvent.start,
+        end: newEvent.end,
+        category: newEvent.category as 'work' | 'personal' | 'focus' | 'meeting'
+      }
+    ];
+
+    setEvents(updatedEvents);
+    saveEvents(updatedEvents);
+    setShowEventForm(false);
+    setNewEvent({
+      title: '',
+      start: '09:00',
+      end: '10:00',
+      category: 'work'
+    });
+
+    toast({
+      title: "Event added",
+      description: "Your event has been added to the planner"
+    });
+  };
+
+  const handleDeleteEvent = (id: string) => {
+    const updatedEvents = events.filter(event => event.id !== id);
+    setEvents(updatedEvents);
+    saveEvents(updatedEvents);
+    
+    toast({
+      title: "Event deleted",
+      description: "Your event has been removed from the planner"
+    });
+  };
   
   return (
     <AppLayout>
@@ -120,14 +190,82 @@ const PlannerPage: React.FC = () => {
           </div>
         </div>
         
-        <CustomButton>
+        <CustomButton onClick={() => setShowEventForm(true)}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Event
         </CustomButton>
       </div>
       
+      {showEventForm && (
+        <div className="glass-card rounded-xl p-4 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-medium">Add New Event</h3>
+            <button 
+              onClick={() => setShowEventForm(false)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Title</label>
+              <input
+                type="text"
+                value={newEvent.title}
+                onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="Event title"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Start Time</label>
+                <input
+                  type="time"
+                  value={newEvent.start}
+                  onChange={(e) => setNewEvent({...newEvent, start: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">End Time</label>
+                <input
+                  type="time"
+                  value={newEvent.end}
+                  onChange={(e) => setNewEvent({...newEvent, end: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Category</label>
+              <select
+                value={newEvent.category}
+                onChange={(e) => setNewEvent({...newEvent, category: e.target.value as any})}
+                className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="work">Work</option>
+                <option value="personal">Personal</option>
+                <option value="focus">Focus</option>
+                <option value="meeting">Meeting</option>
+              </select>
+            </div>
+            
+            <div className="flex justify-end">
+              <CustomButton onClick={handleAddEvent}>
+                Add Event
+              </CustomButton>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="glass-card rounded-xl overflow-hidden">
-        <div className="p-4 bg-secondary/50 border-b">
+        <div className="p-4 bg-secondary/50 border-b dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Calendar className="h-5 w-5 text-primary" />
@@ -150,7 +288,7 @@ const PlannerPage: React.FC = () => {
           </div>
         </div>
         
-        <div className="divide-y">
+        <div className="divide-y dark:divide-gray-700">
           {hoursOfDay.map((hour) => {
             const hourStr = `${hour.toString().padStart(2, '0')}:00`;
             const hourEvents = events.filter(event => {
@@ -160,7 +298,7 @@ const PlannerPage: React.FC = () => {
             
             return (
               <div key={hour} className="flex">
-                <div className="w-16 py-3 px-4 text-sm text-muted-foreground border-r flex items-start">
+                <div className="w-16 py-3 px-4 text-sm text-muted-foreground border-r dark:border-gray-700 flex items-start">
                   {hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
                 </div>
                 <div className="flex-1 min-h-[80px] py-2 px-4 relative">
@@ -170,11 +308,19 @@ const PlannerPage: React.FC = () => {
                         <div 
                           key={event.id}
                           className={cn(
-                            "px-3 py-2 rounded-md text-sm",
+                            "px-3 py-2 rounded-md text-sm relative group",
                             getCategoryColors(event.category)
                           )}
                         >
-                          <div className="font-medium">{event.title}</div>
+                          <div className="font-medium flex justify-between">
+                            {event.title}
+                            <button 
+                              onClick={() => handleDeleteEvent(event.id)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
                           <div className="text-xs mt-1 flex items-center">
                             <Clock className="h-3 w-3 mr-1" />
                             {event.start} - {event.end}

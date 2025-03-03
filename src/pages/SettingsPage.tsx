@@ -4,7 +4,7 @@ import AppLayout from '../components/AppLayout';
 import { Moon, Sun, Bell, User, Clock, Palette, Save } from 'lucide-react';
 import CustomButton from '../components/CustomButton';
 import { useToast } from '@/hooks/use-toast';
-import { saveTheme, loadTheme, saveFocusTime, loadFocusTime } from '../utils/localStorageUtils';
+import { saveTheme, loadTheme, savePomodoroSettings, loadPomodoroSettings } from '../utils/localStorageUtils';
 
 const SettingsPage: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -15,14 +15,11 @@ const SettingsPage: React.FC = () => {
     longBreakDuration: 15,
     sessionsBeforeLongBreak: 4
   });
-  const [userSettings, setUserSettings] = useState({
-    name: 'John Smith',
-    email: 'john.smith@example.com'
-  });
+  const [userName, setUserName] = useState('User');
   
   const { toast } = useToast();
   
-  // Load theme from local storage on component mount
+  // Load settings from local storage on component mount
   useEffect(() => {
     const savedTheme = loadTheme();
     setDarkMode(savedTheme);
@@ -32,6 +29,12 @@ const SettingsPage: React.FC = () => {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+    }
+    
+    // Load Pomodoro settings if available
+    const savedPomodoroSettings = loadPomodoroSettings();
+    if (savedPomodoroSettings) {
+      setPomodoroSettings(savedPomodoroSettings);
     }
   }, []);
   
@@ -52,8 +55,8 @@ const SettingsPage: React.FC = () => {
   const handleSaveSettings = () => {
     // Save settings to local storage
     saveTheme(darkMode);
+    savePomodoroSettings(pomodoroSettings);
     
-    // In a real application, this would save to backend/localStorage
     toast({
       title: "Settings saved",
       description: "Your preferences have been updated successfully.",
@@ -70,7 +73,7 @@ const SettingsPage: React.FC = () => {
       <div className="max-w-3xl mx-auto">
         <div className="space-y-6">
           {/* Appearance Settings */}
-          <div className="glass-card p-6 rounded-xl">
+          <div className="glass-card p-6 rounded-xl dark:bg-gray-800">
             <div className="flex items-center space-x-2 mb-4">
               <Palette className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold">Appearance</h2>
@@ -91,7 +94,7 @@ const SettingsPage: React.FC = () => {
                       onChange={handleDarkModeToggle}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                   </label>
                   <Moon className="h-5 w-5 text-blue-700" />
                 </div>
@@ -100,7 +103,7 @@ const SettingsPage: React.FC = () => {
           </div>
           
           {/* Notifications Settings */}
-          <div className="glass-card p-6 rounded-xl">
+          <div className="glass-card p-6 rounded-xl dark:bg-gray-800">
             <div className="flex items-center space-x-2 mb-4">
               <Bell className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold">Notifications</h2>
@@ -119,14 +122,14 @@ const SettingsPage: React.FC = () => {
                     onChange={() => setNotificationsEnabled(!notificationsEnabled)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                 </label>
               </div>
             </div>
           </div>
           
           {/* Pomodoro Settings */}
-          <div className="glass-card p-6 rounded-xl">
+          <div className="glass-card p-6 rounded-xl dark:bg-gray-800">
             <div className="flex items-center space-x-2 mb-4">
               <Clock className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold">Pomodoro Timer</h2>
@@ -146,7 +149,7 @@ const SettingsPage: React.FC = () => {
                     ...pomodoroSettings,
                     workDuration: parseInt(e.target.value)
                   })}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
               
@@ -163,7 +166,7 @@ const SettingsPage: React.FC = () => {
                     ...pomodoroSettings,
                     shortBreakDuration: parseInt(e.target.value)
                   })}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
               
@@ -180,7 +183,7 @@ const SettingsPage: React.FC = () => {
                     ...pomodoroSettings,
                     longBreakDuration: parseInt(e.target.value)
                   })}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
               
@@ -197,14 +200,14 @@ const SettingsPage: React.FC = () => {
                     ...pomodoroSettings,
                     sessionsBeforeLongBreak: parseInt(e.target.value)
                   })}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
             </div>
           </div>
           
           {/* Profile Settings */}
-          <div className="glass-card p-6 rounded-xl">
+          <div className="glass-card p-6 rounded-xl dark:bg-gray-800">
             <div className="flex items-center space-x-2 mb-4">
               <User className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold">Profile</h2>
@@ -217,27 +220,9 @@ const SettingsPage: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  value={userSettings.name}
-                  onChange={(e) => setUserSettings({
-                    ...userSettings,
-                    name: e.target.value
-                  })}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={userSettings.email}
-                  onChange={(e) => setUserSettings({
-                    ...userSettings,
-                    email: e.target.value
-                  })}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
             </div>

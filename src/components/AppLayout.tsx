@@ -21,14 +21,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { logout } = useAuth();
   
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Failed to log out', error);
-    }
-  };
-  
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
@@ -40,7 +32,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         sidebarOpen ? "md:ml-64" : "ml-0"
       )}>
         {/* Header with menu button and user profile */}
-        <header className="flex items-center justify-between px-4 h-14 border-b">
+        <header className="flex items-center justify-between px-4 h-14 border-b dark:border-gray-800">
           <div className="flex items-center">
             <CustomButton 
               variant="ghost" 
@@ -53,23 +45,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <h1 className="text-xl font-semibold">Selflo</h1>
           </div>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="outline-none">
-                <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    U
-                  </AvatarFallback>
-                </Avatar>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive flex items-center gap-2">
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-primary/10 text-primary">
+              U
+            </AvatarFallback>
+          </Avatar>
         </header>
         
         {/* Page Content */}

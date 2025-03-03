@@ -1,4 +1,3 @@
-
 // Utility functions for handling local storage
 
 // Task storage
@@ -54,4 +53,14 @@ export const saveFocusTime = (minutes: number) => {
 export const loadFocusTime = () => {
   const focusTime = localStorage.getItem('focusTime');
   return focusTime ? JSON.parse(focusTime) : 0;
+};
+
+// Pomodoro settings storage
+export const savePomodoroSettings = (settings: any) => {
+  localStorage.setItem('pomodoroSettings', JSON.stringify(settings));
+};
+
+export const loadPomodoroSettings = () => {
+  const settingsData = localStorage.getItem('pomodoroSettings');
+  return settingsData ? JSON.parse(settingsData) : null;
 };
