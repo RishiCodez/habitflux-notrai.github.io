@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Plus, Search, Filter, ListFilter, List, FolderPlus, CheckSquare } from 'lucide-react';
@@ -14,38 +13,6 @@ interface TaskList {
   name: string;
   color: string;
 }
-
-const sampleTasks: Task[] = [
-  {
-    id: '1',
-    title: 'Complete project proposal',
-    description: 'Draft the initial proposal for the new client project',
-    completed: false,
-    priority: 'high',
-    dueDate: '2023-07-15',
-    project: 'Work',
-    listId: 'work'
-  },
-  {
-    id: '2',
-    title: 'Schedule team meeting',
-    description: 'Coordinate with team members for the weekly sync',
-    completed: true,
-    priority: 'medium',
-    project: 'Work',
-    listId: 'work'
-  },
-  {
-    id: '3',
-    title: 'Grocery shopping',
-    description: 'Buy vegetables, fruits, and other essentials',
-    completed: false,
-    priority: 'low',
-    dueDate: '2023-07-10',
-    project: 'Personal',
-    listId: 'personal'
-  }
-];
 
 const defaultLists: TaskList[] = [
   { id: 'work', name: 'Work', color: 'bg-blue-500' },
@@ -74,8 +41,8 @@ const TasksPage: React.FC = () => {
     if (savedTasks) {
       setTasks(savedTasks);
     } else {
-      setTasks(sampleTasks);
-      saveTasks(sampleTasks);
+      setTasks([]);
+      saveTasks([]);
     }
 
     const savedLists = loadTaskLists();
@@ -392,18 +359,25 @@ const TasksPage: React.FC = () => {
           ))
         ) : (
           <div className="glass-card p-8 rounded-xl text-center">
-            <h3 className="text-lg font-medium">No tasks found</h3>
-            <p className="text-muted-foreground">
-              {searchQuery || filter !== 'all' || projectFilter || priorityFilter || listFilter
-                ? "Try adjusting your filters to see more tasks."
-                : "Add a new task to get started."}
-            </p>
-            {!showForm && (
-              <CustomButton onClick={() => setShowForm(true)} className="mt-4">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Your First Task
-              </CustomButton>
-            )}
+            <div className="flex flex-col items-center justify-center">
+              <img 
+                src="/lovable-uploads/ee69a7fe-8e00-4753-909b-b10210f77674.png" 
+                alt="Person working at desk" 
+                className="max-w-full h-auto max-h-64 mb-6"
+              />
+              <h3 className="text-lg font-medium">No tasks found</h3>
+              <p className="text-muted-foreground">
+                {searchQuery || filter !== 'all' || projectFilter || priorityFilter || listFilter
+                  ? "Try adjusting your filters to see more tasks."
+                  : "Add a new task to get started."}
+              </p>
+              {!showForm && (
+                <CustomButton onClick={() => setShowForm(true)} className="mt-4">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Your First Task
+                </CustomButton>
+              )}
+            </div>
           </div>
         )}
       </div>

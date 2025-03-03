@@ -2,14 +2,24 @@ import { useNavigate } from 'react-router-dom';
 import CustomButton from '@/components/CustomButton';
 import { 
   ClipboardCheck, Clock, Calendar, Brain, ChevronRight, 
-  Star, Target, Layout, Sparkles, RefreshCw
+  Star, Target, Layout, Sparkles, RefreshCw, LogIn, UserPlus
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   const handleGetStarted = () => {
     navigate('/dashboard');
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
+  };
+
+  const handleSignup = () => {
+    navigate('/signup');
   };
 
   return (
@@ -17,12 +27,41 @@ const LandingPage = () => {
       {/* Header */}
       <header className="container mx-auto py-6 px-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold">Selflo</h1>
-        <nav className="hidden md:block">
-          <ul className="flex space-x-8">
+        <nav className="flex items-center space-x-4">
+          <ul className="hidden md:flex space-x-8 mr-6">
             <li><a href="#features" className="text-foreground/80 hover:text-foreground transition-colors">Features</a></li>
             <li><a href="#how-it-works" className="text-foreground/80 hover:text-foreground transition-colors">How It Works</a></li>
             <li><a href="#testimonials" className="text-foreground/80 hover:text-foreground transition-colors">Testimonials</a></li>
           </ul>
+          
+          {currentUser ? (
+            <CustomButton 
+              onClick={handleGetStarted}
+              variant="outline"
+              className="flex items-center"
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              Dashboard
+            </CustomButton>
+          ) : (
+            <div className="flex space-x-2">
+              <CustomButton 
+                onClick={handleLogin}
+                variant="outline"
+                className="flex items-center"
+              >
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign In
+              </CustomButton>
+              <CustomButton 
+                onClick={handleSignup}
+                className="flex items-center"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Sign Up
+              </CustomButton>
+            </div>
+          )}
         </nav>
       </header>
 
@@ -57,15 +96,57 @@ const LandingPage = () => {
             <div className="md:w-5/12 w-full max-w-md glass-card rounded-xl p-6 animate-fade-up animation-delay-200">
               <div className="space-y-4 text-center">
                 <h2 className="text-2xl font-bold">Welcome to Selflo!</h2>
-                <p className="text-muted-foreground">
-                  Click the button below to access all features without any login required.
-                </p>
-                <CustomButton 
-                  className="w-full mt-4" 
-                  onClick={handleGetStarted}
-                >
-                  Enter Dashboard
-                </CustomButton>
+                {currentUser ? (
+                  <>
+                    <p className="text-muted-foreground">
+                      Welcome back! Click the button below to access your dashboard.
+                    </p>
+                    <CustomButton 
+                      className="w-full mt-4" 
+                      onClick={handleGetStarted}
+                    >
+                      Go to Dashboard
+                    </CustomButton>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-muted-foreground">
+                      Sign in to access all features or continue as a guest.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      <CustomButton 
+                        variant="outline"
+                        onClick={handleLogin}
+                        className="flex items-center justify-center"
+                      >
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Sign In
+                      </CustomButton>
+                      <CustomButton 
+                        onClick={handleSignup}
+                        className="flex items-center justify-center"
+                      >
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Sign Up
+                      </CustomButton>
+                    </div>
+                    <div className="relative mt-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t"></span>
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">Or</span>
+                      </div>
+                    </div>
+                    <CustomButton 
+                      variant="secondary"
+                      className="w-full" 
+                      onClick={handleGetStarted}
+                    >
+                      Continue as Guest
+                    </CustomButton>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -278,13 +359,33 @@ const LandingPage = () => {
             <p className="text-xl text-muted-foreground mb-8">
               Start using Selflo today and take control of your time and focus.
             </p>
-            <CustomButton 
-              size="lg" 
-              onClick={handleGetStarted}
-              className="px-8"
-            >
-              Get Started Now <Sparkles className="ml-2 h-5 w-5" />
-            </CustomButton>
+            {currentUser ? (
+              <CustomButton 
+                size="lg" 
+                onClick={handleGetStarted}
+                className="px-8"
+              >
+                Go to Dashboard <ChevronRight className="ml-2 h-5 w-5" />
+              </CustomButton>
+            ) : (
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <CustomButton 
+                  size="lg" 
+                  onClick={handleSignup}
+                  className="px-8"
+                >
+                  Sign Up Now <UserPlus className="ml-2 h-5 w-5" />
+                </CustomButton>
+                <CustomButton 
+                  size="lg" 
+                  variant="outline"
+                  onClick={handleLogin}
+                  className="px-8"
+                >
+                  Sign In <LogIn className="ml-2 h-5 w-5" />
+                </CustomButton>
+              </div>
+            )}
           </div>
         </div>
       </section>

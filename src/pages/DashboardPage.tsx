@@ -2,22 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
-import { CheckCircle, Circle, Clock, Calendar, BarChart3, BookOpen, Edit } from 'lucide-react';
+import { CheckCircle, Circle, Clock, Calendar, BarChart3, BookOpen, Edit, Plus } from 'lucide-react';
 import TaskCard, { Task } from '../components/TaskCard';
 import CustomButton from '../components/CustomButton';
 import { useToast } from '@/hooks/use-toast';
 import PomodoroTimer from '../components/PomodoroTimer';
 import { loadTasks, saveTasks, loadFocusTime, saveFocusTime, loadReflections, saveReflection } from '../utils/localStorageUtils';
 import ReflectionForm from '../components/ReflectionForm';
-
-// Sample reflection for demonstration
-const sampleReflection = {
-  id: '1',
-  date: new Date().toISOString(),
-  accomplishments: 'Completed the website design, had a productive meeting with the team.',
-  challenges: 'Got distracted during the afternoon session, need to work on focus.',
-  insights: 'Breaking tasks into smaller chunks helps me maintain focus and momentum.'
-};
 
 const DashboardPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -32,6 +23,9 @@ const DashboardPage: React.FC = () => {
     const savedTasks = loadTasks();
     if (savedTasks) {
       setTasks(savedTasks);
+    } else {
+      setTasks([]);
+      saveTasks([]);
     }
     
     // Load focus time
@@ -161,25 +155,43 @@ const DashboardPage: React.FC = () => {
         <div className="lg:col-span-2 glass-card p-6 rounded-xl">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Today's Tasks</h2>
-            <CustomButton size="sm" variant="outline" onClick={() => {}}>
+            <CustomButton size="sm" variant="outline" onClick={() => { window.location.href = '/tasks'; }}>
               View All
             </CustomButton>
           </div>
           
           <div className="space-y-4">
-            {tasks.slice(0, 4).map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onComplete={handleCompleteTask}
-                onDelete={() => {}}
-                onEdit={() => {}}
-              />
-            ))}
-            
-            <CustomButton className="w-full" variant="outline" onClick={() => window.location.href = '/tasks'}>
-              View All Tasks
-            </CustomButton>
+            {tasks.length > 0 ? (
+              <>
+                {tasks.slice(0, 4).map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onComplete={handleCompleteTask}
+                    onDelete={() => {}}
+                    onEdit={() => {}}
+                  />
+                ))}
+                {tasks.length > 4 && (
+                  <CustomButton className="w-full" variant="outline" onClick={() => window.location.href = '/tasks'}>
+                    View All Tasks
+                  </CustomButton>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-6">
+                <img 
+                  src="/lovable-uploads/ee69a7fe-8e00-4753-909b-b10210f77674.png" 
+                  alt="Person working at desk" 
+                  className="max-w-full h-auto max-h-48 mx-auto mb-4"
+                />
+                <p className="text-muted-foreground mb-4">No tasks available yet. Add your first task to get started.</p>
+                <CustomButton onClick={() => window.location.href = '/tasks'}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Your First Task
+                </CustomButton>
+              </div>
+            )}
           </div>
         </div>
         
