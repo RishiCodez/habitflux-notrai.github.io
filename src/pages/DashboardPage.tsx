@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
@@ -24,6 +23,7 @@ const DashboardPage: React.FC = () => {
     if (savedTasks) {
       setTasks(savedTasks);
     } else {
+      // Initialize with empty array instead of default tasks
       setTasks([]);
       saveTasks([]);
     }

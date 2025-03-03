@@ -39,6 +39,7 @@ interface User {
   email?: string;
   uid: string;
   photoURL?: string;
+  isGuest?: boolean;
 }
 
 interface AuthContextType {
@@ -47,6 +48,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   firebaseInitialized: boolean;
   isGoogleCalendarConnected: boolean;
@@ -182,6 +184,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Login as guest
+  const loginAsGuest = async () => {
+    try {
+      setLoading(true);
+      
+      // Create a guest user
+      const guestUser: User = {
+        uid: `guest-${Date.now()}`,
+        displayName: 'Guest',
+        isGuest: true
+      };
+      
+      setCurrentUser(guestUser);
+      localStorage.setItem('guestUser', JSON.stringify(guestUser));
+      navigate('/dashboard');
+      toast.success('Logged in as guest successfully');
+      
+    } catch (error) {
+      console.error('Guest login failed:', error);
+      toast.error('Guest login failed. Please try again.');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Connect Google Calendar
   const connectGoogleCalendar = async () => {
     if (!auth) {
@@ -222,16 +250,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout
   const logout = async () => {
-    if (!auth) {
-      toast.error('Firebase not initialized. Check your environment variables.');
-      return Promise.reject(new Error('Firebase not initialized'));
-    }
-    
     try {
       setLoading(true);
-      await signOut(auth);
+      
+      if (currentUser?.isGuest) {
+        // For guest users, just clear the localStorage
+        localStorage.removeItem('guestUser');
+      } else if (auth) {
+        // For authenticated users, sign out from Firebase
+        await signOut(auth);
+      }
+      
       localStorage.removeItem('googleCalendarToken');
       setIsGoogleCalendarConnected(false);
+      setCurrentUser(null);
       navigate('/');
       toast.success('Logged out successfully');
     } catch (error) {
@@ -243,12 +275,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Check for guest user in localStorage on initial load
+  useEffect(() => {
+    if (!currentUser && !loading) {
+      const guestUserData = localStorage.getItem('guestUser');
+      if (guestUserData) {
+        try {
+          const guestUser = JSON.parse(guestUserData);
+          setCurrentUser(guestUser);
+        } catch (error) {
+          console.error('Error parsing guest user data:', error);
+          localStorage.removeItem('guestUser');
+        }
+      }
+    }
+  }, [loading]);
+
   const value = {
     currentUser,
     loading,
     login,
     signup,
     loginWithGoogle,
+    loginAsGuest,
     logout,
     firebaseInitialized,
     isGoogleCalendarConnected,

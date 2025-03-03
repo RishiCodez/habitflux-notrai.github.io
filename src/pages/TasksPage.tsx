@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, Search, Filter, ListFilter, List, FolderPlus, CheckSquare } from 'lucide-react';
+import { Plus, Search, ListFilter, FolderPlus, CheckSquare } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import TaskCard, { Task } from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
