@@ -12,7 +12,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const navItems = [
-    { name: 'Dashboard', icon: Home, path: '/' },
+    { name: 'Dashboard', icon: Home, path: '/dashboard' }, // Changed from '/' to '/dashboard'
     { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
     { name: 'Pomodoro', icon: Clock, path: '/pomodoro' },
     { name: 'Planner', icon: Calendar, path: '/planner' },
