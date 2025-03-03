@@ -31,6 +31,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit 
     high: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
   };
   
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
+    onDelete(task.id);
+    setIsMenuOpen(false);
+  };
+  
   return (
     <div className={cn(
       "glass-card p-4 rounded-lg transition-all duration-200",
@@ -111,10 +117,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit 
                     </button>
                     <button
                       className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      onClick={() => {
-                        onDelete(task.id);
-                        setIsMenuOpen(false);
-                      }}
+                      onClick={handleDelete}
                     >
                       <Trash className="h-4 w-4" />
                       Delete
