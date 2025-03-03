@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import DashboardPage from "./pages/DashboardPage";
 import TasksPage from "./pages/TasksPage";
@@ -12,7 +12,10 @@ import PlannerPage from "./pages/PlannerPage";
 import AssistantPage from "./pages/AssistantPage";
 import SettingsPage from "./pages/SettingsPage";
 import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { useEffect } from "react";
 import { loadTheme } from "./utils/localStorageUtils";
 import './App.css';
@@ -39,12 +42,41 @@ const App = () => {
           <AuthProvider>
             <Routes>
               <Route path="/" element={<LandingPage />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/tasks" element={<TasksPage />} />
-              <Route path="/pomodoro" element={<PomodoroPage />} />
-              <Route path="/planner" element={<PlannerPage />} />
-              <Route path="/assistant" element={<AssistantPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              
+              {/* Protected routes */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/tasks" element={
+                <ProtectedRoute>
+                  <TasksPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/pomodoro" element={
+                <ProtectedRoute>
+                  <PomodoroPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/planner" element={
+                <ProtectedRoute>
+                  <PlannerPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/assistant" element={
+                <ProtectedRoute>
+                  <AssistantPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              } />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

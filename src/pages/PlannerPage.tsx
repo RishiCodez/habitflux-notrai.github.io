@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
-import { Calendar, ChevronLeft, ChevronRight, Clock, PlusCircle, X, Check } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, PlusCircle, X, Check, RefreshCw } from 'lucide-react';
 import CustomButton from '../components/CustomButton';
 import { loadEvents, saveEvents, checkEventSetupDone, saveEventSetupDone } from '../utils/localStorageUtils';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '../contexts/AuthContext';
+import { fetchCalendarEvents, convertGoogleEventToAppEvent } from '../utils/googleCalendarUtils';
 
 interface Event {
   id: string;
@@ -13,6 +15,7 @@ interface Event {
   start: string;
   end: string;
   category: 'work' | 'personal' | 'focus' | 'meeting';
+  isGoogleEvent?: boolean;
 }
 
 const defaultEvents: Event[] = [
@@ -58,6 +61,7 @@ const PlannerPage: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showEventForm, setShowEventForm] = useState(false);
   const [showSetupDialog, setShowSetupDialog] = useState(false);
+  const [loadingCalendar, setLoadingCalendar] = useState(false);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
     start: '09:00',
@@ -66,6 +70,7 @@ const PlannerPage: React.FC = () => {
   });
   
   const { toast } = useToast();
+  const { isGoogleCalendarConnected, connectGoogleCalendar, currentUser } = useAuth();
   
   // Load events from local storage on component mount
   useEffect(() => {
@@ -81,6 +86,60 @@ const PlannerPage: React.FC = () => {
       saveEvents([]);
     }
   }, []);
+  
+  // Sync with Google Calendar when connected
+  useEffect(() => {
+    if (isGoogleCalendarConnected) {
+      syncGoogleCalendar();
+    }
+  }, [isGoogleCalendarConnected, currentDate]);
+  
+  const syncGoogleCalendar = async () => {
+    if (!isGoogleCalendarConnected) return;
+    
+    setLoadingCalendar(true);
+    
+    try {
+      // Create date range for the current day (start to end)
+      const startOfDay = new Date(currentDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(currentDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      // Fetch Google Calendar events
+      const googleEvents = await fetchCalendarEvents(startOfDay, endOfDay);
+      
+      // Remove existing Google Calendar events
+      const localEvents = events.filter(event => !event.isGoogleEvent);
+      
+      // Convert and add Google Calendar events
+      const convertedEvents = googleEvents.map(gEvent => ({
+        ...convertGoogleEventToAppEvent(gEvent),
+        isGoogleEvent: true
+      }));
+      
+      // Combine local and Google events
+      const combinedEvents = [...localEvents, ...convertedEvents];
+      
+      setEvents(combinedEvents);
+      saveEvents(combinedEvents);
+      
+      toast({
+        title: "Calendar synced",
+        description: `Synced ${convertedEvents.length} events from Google Calendar`
+      });
+    } catch (error) {
+      console.error('Error syncing with Google Calendar:', error);
+      toast({
+        title: "Sync failed",
+        description: "Failed to sync with Google Calendar",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingCalendar(false);
+    }
+  };
   
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const hoursOfDay = Array.from({ length: 12 }, (_, i) => i + 8); // 8 AM to 7 PM
@@ -158,6 +217,17 @@ const PlannerPage: React.FC = () => {
   };
 
   const handleDeleteEvent = (id: string) => {
+    // Don't allow deletion of Google Calendar events from the app
+    const eventToDelete = events.find(event => event.id === id);
+    if (eventToDelete?.isGoogleEvent) {
+      toast({
+        title: "Cannot delete Google event",
+        description: "Google Calendar events can only be deleted from Google Calendar",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const updatedEvents = events.filter(event => event.id !== id);
     setEvents(updatedEvents);
     saveEvents(updatedEvents);
@@ -190,6 +260,14 @@ const PlannerPage: React.FC = () => {
       title: "Empty planner created",
       description: "Your planner is ready for you to add events"
     });
+  };
+  
+  const handleConnectGoogleCalendar = async () => {
+    try {
+      await connectGoogleCalendar();
+    } catch (error) {
+      console.error('Failed to connect Google Calendar:', error);
+    }
   };
   
   return (
@@ -259,10 +337,33 @@ const PlannerPage: React.FC = () => {
           </div>
         </div>
         
-        <CustomButton onClick={() => setShowEventForm(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Event
-        </CustomButton>
+        <div className="flex items-center space-x-2">
+          {isGoogleCalendarConnected ? (
+            <CustomButton 
+              variant="outline" 
+              size="sm" 
+              onClick={syncGoogleCalendar}
+              disabled={loadingCalendar}
+            >
+              <RefreshCw className={cn("mr-2 h-4 w-4", loadingCalendar && "animate-spin")} />
+              {loadingCalendar ? "Syncing..." : "Sync Google Calendar"}
+            </CustomButton>
+          ) : (
+            <CustomButton 
+              variant="outline" 
+              size="sm" 
+              onClick={handleConnectGoogleCalendar}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              Connect to Google Calendar
+            </CustomButton>
+          )}
+          
+          <CustomButton onClick={() => setShowEventForm(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Event
+          </CustomButton>
+        </div>
       </div>
       
       {showEventForm && (
@@ -337,7 +438,7 @@ const PlannerPage: React.FC = () => {
         <div className="p-4 bg-secondary/50 border-b dark:bg-gray-800 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-primary" />
+              <CalendarIcon className="h-5 w-5 text-primary" />
               <h2 className="font-medium">Daily Schedule</h2>
             </div>
             <div className="flex space-x-2">
@@ -383,16 +484,23 @@ const PlannerPage: React.FC = () => {
                         >
                           <div className="font-medium flex justify-between">
                             {event.title}
-                            <button 
-                              onClick={() => handleDeleteEvent(event.id)}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
+                            {!event.isGoogleEvent && (
+                              <button 
+                                onClick={() => handleDeleteEvent(event.id)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
                           </div>
                           <div className="text-xs mt-1 flex items-center">
                             <Clock className="h-3 w-3 mr-1" />
                             {event.start} - {event.end}
+                            {event.isGoogleEvent && (
+                              <span className="ml-2 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-[10px] px-1 rounded">
+                                Google
+                              </span>
+                            )}
                           </div>
                         </div>
                       ))}
