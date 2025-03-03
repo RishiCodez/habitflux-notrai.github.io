@@ -13,6 +13,7 @@ import {
   User as FirebaseUser
 } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
+import { saveFirstVisitComplete, checkFirstVisit } from '../utils/localStorageUtils';
 
 // Firebase configuration using environment variables
 const firebaseConfig = {
@@ -198,8 +199,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setCurrentUser(guestUser);
       localStorage.setItem('guestUser', JSON.stringify(guestUser));
+      
+      // Check if this is their first visit to show the tour
+      const isFirstVisit = checkFirstVisit();
+      if (isFirstVisit) {
+        // We'll mark the visit in the tour completion
+      } else {
+        saveFirstVisitComplete(); // In case they've visited before
+      }
+      
       navigate('/dashboard');
-      toast.success('Logged in as guest successfully');
+      toast.success('Logged in as guest successfully! Explore the app and enjoy.');
       
     } catch (error) {
       console.error('Guest login failed:', error);

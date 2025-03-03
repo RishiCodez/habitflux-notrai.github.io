@@ -43,7 +43,10 @@ const LoginPage: React.FC = () => {
   const handleGuestLogin = async () => {
     try {
       await loginAsGuest();
-      // Success toast is shown in the loginAsGuest function
+      toast({
+        title: "Welcome!",
+        description: "You've logged in as a guest. Enjoy exploring the app!",
+      });
     } catch (error) {
       // Error handling is done in the loginAsGuest function
     }
@@ -164,13 +167,6 @@ const LoginPage: React.FC = () => {
           </>
         ) : (
           <div className="space-y-6">
-            <div className="p-4 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded-md">
-              <h3 className="font-medium mb-2">Firebase Not Configured</h3>
-              <p className="text-sm">
-                To use authentication, you need to add your Firebase configuration to the .env file.
-              </p>
-            </div>
-            
             <CustomButton
               type="button"
               onClick={handleGuestLogin}

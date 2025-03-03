@@ -6,7 +6,8 @@ import TaskCard, { Task } from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
 import CustomButton from '../components/CustomButton';
 import { useToast } from '@/hooks/use-toast';
-import { saveTasks, loadTasks, saveTaskLists, loadTaskLists } from '../utils/localStorageUtils';
+import { saveTasks, loadTasks, saveTaskLists, loadTaskLists, checkFirstVisit, saveFirstVisitComplete } from '../utils/localStorageUtils';
+import TourGuide from '../components/TourGuide';
 
 interface TaskList {
   id: string;
@@ -33,6 +34,7 @@ const TasksPage: React.FC = () => {
   const [listFilter, setListFilter] = useState<string | null>(null);
   const [newListName, setNewListName] = useState('');
   const [newListColor, setNewListColor] = useState('bg-blue-500');
+  const [showTour, setShowTour] = useState(false);
   
   const { toast } = useToast();
 
@@ -41,6 +43,7 @@ const TasksPage: React.FC = () => {
     if (savedTasks) {
       setTasks(savedTasks);
     } else {
+      // Don't set any default tasks, just initialize with an empty array
       setTasks([]);
       saveTasks([]);
     }
@@ -51,6 +54,12 @@ const TasksPage: React.FC = () => {
     } else {
       setTaskLists(defaultLists);
       saveTaskLists(defaultLists);
+    }
+    
+    // Check if this is the first visit to show the tour
+    const isFirstVisit = checkFirstVisit();
+    if (isFirstVisit) {
+      setShowTour(true);
     }
   }, []);
 
@@ -180,16 +189,27 @@ const TasksPage: React.FC = () => {
     'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
   ];
   
+  const handleTourComplete = () => {
+    setShowTour(false);
+    saveFirstVisitComplete();
+    toast({
+      title: "Tour completed",
+      description: "You're all set to start using the task manager!",
+    });
+  };
+  
   return (
     <AppLayout>
+      {showTour && <TourGuide onComplete={handleTourComplete} />}
+      
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Task Management</h1>
         <div className="flex space-x-2">
-          <CustomButton onClick={() => setShowListForm(true)} variant="outline">
+          <CustomButton onClick={() => setShowListForm(true)} variant="outline" id="new-list-button">
             <FolderPlus className="mr-2 h-4 w-4" />
             New List
           </CustomButton>
-          <CustomButton onClick={() => setShowForm(true)}>
+          <CustomButton onClick={() => setShowForm(true)} id="add-task-button">
             <Plus className="mr-2 h-4 w-4" />
             Add Task
           </CustomButton>
@@ -197,7 +217,7 @@ const TasksPage: React.FC = () => {
       </div>
       
       {/* Lists Bar */}
-      <div className="mb-6 glass-card p-3 rounded-lg overflow-x-auto">
+      <div className="mb-6 glass-card p-3 rounded-lg overflow-x-auto" id="lists-bar">
         <div className="flex space-x-2 min-w-max">
           <button
             onClick={() => setListFilter(null)}
@@ -230,7 +250,6 @@ const TasksPage: React.FC = () => {
         </div>
       </div>
       
-      {/* List Form */}
       {showListForm && (
         <div className="mb-6 glass-card p-6 rounded-xl">
           <h2 className="text-xl font-semibold mb-4">Create New List</h2>
@@ -346,7 +365,7 @@ const TasksPage: React.FC = () => {
         </div>
       )}
       
-      <div className="space-y-4">
+      <div className="space-y-4" id="tasks-container">
         {filteredTasks.length > 0 ? (
           filteredTasks.map((task) => (
             <TaskCard

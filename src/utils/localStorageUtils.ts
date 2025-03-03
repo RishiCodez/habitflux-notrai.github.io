@@ -31,6 +31,16 @@ export const loadTheme = () => {
   return theme ? JSON.parse(theme) : false; // default to light mode
 };
 
+// First-time visit tracking
+export const checkFirstVisit = () => {
+  const visited = localStorage.getItem('firstVisitComplete');
+  return visited ? false : true;
+};
+
+export const saveFirstVisitComplete = () => {
+  localStorage.setItem('firstVisitComplete', 'true');
+};
+
 // Reflection storage
 export const saveReflection = (reflection: any) => {
   const reflections = loadReflections() || [];

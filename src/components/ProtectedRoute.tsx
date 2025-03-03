@@ -24,13 +24,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <>{children}</>;
   }
   
-  // If Firebase is not initialized but we still want to allow access
-  if (!firebaseInitialized) {
-    // Redirect to login page to use guest access instead
-    return <Navigate to="/login" />;
-  }
-  
-  // Redirect to login if not authenticated
+  // Redirect to login page
   return <Navigate to="/login" />;
 };
 
