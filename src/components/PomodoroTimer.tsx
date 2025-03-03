@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Play, Pause, RotateCcw } from 'lucide-react';
@@ -8,11 +7,13 @@ import { useToast } from '@/hooks/use-toast';
 interface PomodoroTimerProps {
   initialWorkMinutes?: number;
   initialBreakMinutes?: number;
+  onSessionComplete?: (minutes: number) => void;
 }
 
 const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   initialWorkMinutes = 25,
   initialBreakMinutes = 5,
+  onSessionComplete
 }) => {
   const [workMinutes, setWorkMinutes] = useState(initialWorkMinutes);
   const [breakMinutes, setBreakMinutes] = useState(initialBreakMinutes);
@@ -37,6 +38,9 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
           title: "Break time!",
           description: "Take a short break to recharge.",
         });
+        if (onSessionComplete) {
+          onSessionComplete(workMinutes);
+        }
         setMode('break');
         setTimeLeft(breakMinutes * 60);
         setCycles(cycles + 1);
@@ -53,7 +57,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, timeLeft, mode, workMinutes, breakMinutes, cycles, toast]);
+  }, [isActive, timeLeft, mode, workMinutes, breakMinutes, cycles, toast, onSessionComplete]);
   
   const toggleTimer = () => {
     setIsActive(!isActive);

@@ -6,6 +6,7 @@ import { CheckCircle, Circle, Clock, Calendar, BarChart3, BookOpen } from 'lucid
 import TaskCard, { Task } from '../components/TaskCard';
 import CustomButton from '../components/CustomButton';
 import { useToast } from '@/hooks/use-toast';
+import PomodoroTimer from '../components/PomodoroTimer';
 
 // Sample tasks for demonstration
 const sampleTasks: Task[] = [
@@ -30,10 +31,18 @@ const sampleTasks: Task[] = [
     id: '3',
     title: 'Grocery shopping',
     description: 'Buy vegetables, fruits, and other essentials',
-    completed: false,
+    completed: true,
     priority: 'low',
     dueDate: '2023-07-10',
     project: 'Personal'
+  },
+  {
+    id: '4',
+    title: 'Review documentation',
+    description: 'Go through the latest documentation updates',
+    completed: true,
+    priority: 'medium',
+    project: 'Work'
   }
 ];
 
@@ -49,14 +58,40 @@ const sampleReflections = [
 ];
 
 const DashboardPage: React.FC = () => {
-  const [tasks] = useState<Task[]>(sampleTasks);
+  const [tasks, setTasks] = useState<Task[]>(sampleTasks);
+  const [focusTime, setFocusTime] = useState(0); // Total focus time in minutes
   const { toast } = useToast();
   
-  // Placeholder function for demo
-  const handleStartTimer = () => {
+  // Calculate stats for the dashboard
+  const completedTasks = tasks.filter(task => task.completed).length;
+  const inProgressTasks = tasks.filter(task => !task.completed).length;
+  const focusHours = (focusTime / 60).toFixed(1);
+  
+  // Calculate productivity percentage (completed tasks / total tasks * 100)
+  const productivityPercentage = tasks.length > 0 
+    ? Math.round((completedTasks / tasks.length) * 100) 
+    : 0;
+  
+  // Function to handle task completion
+  const handleCompleteTask = (id: string) => {
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
+    
     toast({
-      title: "Timer started",
-      description: "Your focus session has begun. Stay focused!",
+      title: "Task updated",
+      description: "Task status has been updated.",
+    });
+  };
+  
+  // Function to track focus time
+  const handleFocusSessionComplete = (minutes: number) => {
+    setFocusTime(prev => prev + minutes);
+    toast({
+      title: "Focus session completed",
+      description: `You've completed a ${minutes} minute focus session!`,
     });
   };
   
@@ -64,25 +99,25 @@ const DashboardPage: React.FC = () => {
   const stats = [
     {
       title: "Tasks Completed",
-      value: "12",
+      value: completedTasks.toString(),
       icon: CheckCircle,
       color: "text-green-500"
     },
     {
       title: "In Progress",
-      value: "5",
+      value: inProgressTasks.toString(),
       icon: Circle,
       color: "text-blue-500"
     },
     {
       title: "Focus Time",
-      value: "8.5h",
+      value: `${focusHours}h`,
       icon: Clock,
       color: "text-purple-500"
     },
     {
       title: "Productivity",
-      value: "85%",
+      value: `${productivityPercentage}%`,
       icon: BarChart3,
       color: "text-orange-500"
     }
@@ -135,7 +170,7 @@ const DashboardPage: React.FC = () => {
               <TaskCard
                 key={task.id}
                 task={task}
-                onComplete={() => {}}
+                onComplete={handleCompleteTask}
                 onDelete={() => {}}
                 onEdit={() => {}}
               />
@@ -151,17 +186,11 @@ const DashboardPage: React.FC = () => {
         <div>
           <div className="glass-card p-6 rounded-xl mb-6">
             <h2 className="text-xl font-semibold mb-4">Focus Timer</h2>
-            <div className="text-center space-y-4">
-              <div className="text-5xl font-bold">25:00</div>
-              <p className="text-sm text-muted-foreground">Ready to start a focus session?</p>
-              <CustomButton className="w-full" onClick={handleStartTimer}>
-                <Clock className="mr-2 h-4 w-4" />
-                Start Focus Session
-              </CustomButton>
-              <div className="text-xs text-muted-foreground">
-                Complete <span className="font-medium">4</span> sessions today
-              </div>
-            </div>
+            <PomodoroTimer 
+              initialWorkMinutes={25}
+              initialBreakMinutes={5}
+              onSessionComplete={handleFocusSessionComplete}
+            />
           </div>
           
           {/* Daily Reflection */}
