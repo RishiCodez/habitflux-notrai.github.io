@@ -1,55 +1,12 @@
 
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomButton from '@/components/CustomButton';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleSignIn = async () => {
-    if (!email || !password) {
-      toast.error('Please enter both email and password');
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast.success('Signed in successfully!');
-      navigate('/dashboard');
-    } catch (error: any) {
-      console.error('Sign in error:', error);
-      toast.error(error.message || 'Failed to sign in');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignUp = async () => {
-    if (!email || !password) {
-      toast.error('Please enter both email and password');
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      toast.success('Account created successfully!');
-      navigate('/dashboard');
-    } catch (error: any) {
-      console.error('Sign up error:', error);
-      toast.error(error.message || 'Failed to create account');
-    } finally {
-      setLoading(false);
-    }
+  const handleGetStarted = () => {
+    navigate('/dashboard');
   };
 
   return (
@@ -76,80 +33,26 @@ const LandingPage = () => {
           <div className="pt-4">
             <CustomButton 
               size="lg" 
-              onClick={() => document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={handleGetStarted}
             >
               Get Started
             </CustomButton>
           </div>
         </div>
 
-        <div id="auth-section" className="md:w-5/12 w-full max-w-md glass-card rounded-xl p-6 animate-fade-up animation-delay-200">
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin" className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium text-left block">Email</label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="youremail@example.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium text-left block">Password</label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="••••••••" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <CustomButton 
-                className="w-full mt-4" 
-                onClick={handleSignIn}
-                disabled={loading}
-              >
-                {loading ? 'Signing in...' : 'Sign In'}
-              </CustomButton>
-            </TabsContent>
-            
-            <TabsContent value="signup" className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="new-email" className="text-sm font-medium text-left block">Email</label>
-                <Input 
-                  id="new-email" 
-                  type="email" 
-                  placeholder="youremail@example.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="new-password" className="text-sm font-medium text-left block">Password</label>
-                <Input 
-                  id="new-password" 
-                  type="password" 
-                  placeholder="••••••••" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <CustomButton 
-                className="w-full mt-4" 
-                onClick={handleSignUp}
-                disabled={loading}
-              >
-                {loading ? 'Creating account...' : 'Create Account'}
-              </CustomButton>
-            </TabsContent>
-          </Tabs>
+        <div className="md:w-5/12 w-full max-w-md glass-card rounded-xl p-6 animate-fade-up animation-delay-200">
+          <div className="space-y-4 text-center">
+            <h2 className="text-2xl font-bold">Welcome to Selflo!</h2>
+            <p className="text-muted-foreground">
+              Click the button below to access all features without any login required.
+            </p>
+            <CustomButton 
+              className="w-full mt-4" 
+              onClick={handleGetStarted}
+            >
+              Enter Dashboard
+            </CustomButton>
+          </div>
         </div>
       </main>
 

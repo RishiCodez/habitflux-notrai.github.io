@@ -1,12 +1,10 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import React, { createContext, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface AuthContextType {
-  currentUser: User | null;
+  currentUser: null;
   loading: boolean;
   logout: () => Promise<void>;
   firebaseInitialized: boolean;
@@ -23,36 +21,12 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [firebaseInitialized, setFirebaseInitialized] = useState(!!auth);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!auth) {
-      console.error('Firebase auth is not initialized. Check your environment variables.');
-      toast.error('Firebase authentication is not properly configured');
-      setLoading(false);
-      return () => {};
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
-
   const logout = async () => {
-    if (!auth) {
-      console.error('Cannot logout: Firebase auth is not initialized');
-      return;
-    }
-    
     try {
-      await signOut(auth);
       navigate('/');
+      toast.success('Logged out successfully');
     } catch (error) {
       console.error('Logout failed:', error);
       toast.error('Failed to log out');
@@ -60,10 +34,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const value = {
-    currentUser,
-    loading,
+    currentUser: null,
+    loading: false,
     logout,
-    firebaseInitialized
+    firebaseInitialized: true
   };
 
   return (
