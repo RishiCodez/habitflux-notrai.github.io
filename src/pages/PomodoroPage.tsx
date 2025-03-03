@@ -2,6 +2,7 @@
 import React from 'react';
 import AppLayout from '../components/AppLayout';
 import PomodoroTimer from '../components/PomodoroTimer';
+import { Bell } from 'lucide-react';
 
 const PomodoroPage: React.FC = () => {
   return (
@@ -13,6 +14,11 @@ const PomodoroPage: React.FC = () => {
         </p>
         
         <PomodoroTimer />
+        
+        <div className="mt-4 text-sm flex items-center gap-2 text-muted-foreground">
+          <Bell className="h-4 w-4" />
+          <p>Enable browser notifications and unmute your device for timer alerts</p>
+        </div>
         
         <div className="mt-12 glass-card p-6 rounded-xl w-full">
           <h2 className="text-lg font-semibold mb-4">What is the Pomodoro Technique?</h2>

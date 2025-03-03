@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import CustomButton from './CustomButton';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,8 +23,29 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   const [timeLeft, setTimeLeft] = useState(workMinutes * 60);
   const [isActive, setIsActive] = useState(false);
   const [cycles, setCycles] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
+  
+  // Initialize audio element
+  useEffect(() => {
+    audioRef.current = new Audio('/notification.mp3');
+    audioRef.current.volume = 0.7;
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
+  
+  // Request notification permission
+  useEffect(() => {
+    if ("Notification" in window) {
+      Notification.requestPermission();
+    }
+  }, []);
   
   useEffect(() => {
     let interval: number | undefined;
@@ -34,10 +56,24 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       }, 1000);
     } else if (isActive && timeLeft === 0) {
       if (mode === 'work') {
+        // Play sound when timer ends
+        if (soundEnabled && audioRef.current) {
+          audioRef.current.play().catch(e => console.error("Could not play sound:", e));
+        }
+        
+        // Show browser notification
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("Break time!", {
+            body: "Take a short break to recharge.",
+            icon: "/favicon.ico"
+          });
+        }
+        
         toast({
           title: "Break time!",
           description: "Take a short break to recharge.",
         });
+        
         if (onSessionComplete) {
           onSessionComplete(workMinutes);
         }
@@ -45,6 +81,19 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         setTimeLeft(breakMinutes * 60);
         setCycles(cycles + 1);
       } else {
+        // Play sound when break ends
+        if (soundEnabled && audioRef.current) {
+          audioRef.current.play().catch(e => console.error("Could not play sound:", e));
+        }
+        
+        // Show browser notification
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("Back to work!", {
+            body: "Focus time begins now.",
+            icon: "/favicon.ico"
+          });
+        }
+        
         toast({
           title: "Back to work!",
           description: "Focus time begins now.",
@@ -57,7 +106,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, timeLeft, mode, workMinutes, breakMinutes, cycles, toast, onSessionComplete]);
+  }, [isActive, timeLeft, mode, workMinutes, breakMinutes, cycles, toast, onSessionComplete, soundEnabled]);
   
   const toggleTimer = () => {
     setIsActive(!isActive);
@@ -94,6 +143,14 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         setTimeLeft(value * 60);
       }
     }
+  };
+  
+  const toggleSound = () => {
+    setSoundEnabled(!soundEnabled);
+    toast({
+      title: soundEnabled ? "Sound disabled" : "Sound enabled",
+      description: soundEnabled ? "Notifications will be silent." : "You'll hear a sound when timer ends.",
+    });
   };
   
   return (
@@ -167,6 +224,13 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
           <CustomButton onClick={resetTimer} size="lg" variant="outline">
             <RotateCcw className="mr-2 h-5 w-5" />
             Reset
+          </CustomButton>
+          <CustomButton onClick={toggleSound} size="sm" variant="ghost">
+            {soundEnabled ? (
+              <Volume2 className="h-5 w-5" />
+            ) : (
+              <VolumeX className="h-5 w-5" />
+            )}
           </CustomButton>
         </div>
       </div>
