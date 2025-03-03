@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Task } from './TaskCard';
@@ -7,11 +6,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 interface TaskFormProps {
   task?: Task;
+  lists?: TaskList[];  // Add this property to fix the TypeScript error
   onSubmit: (task: Task) => void;
   onCancel: () => void;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ task, lists, onSubmit, onCancel }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
