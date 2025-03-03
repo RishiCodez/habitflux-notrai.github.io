@@ -1,3 +1,4 @@
+
 // Utility functions for handling local storage
 
 // Task storage
@@ -63,4 +64,14 @@ export const savePomodoroSettings = (settings: any) => {
 export const loadPomodoroSettings = () => {
   const settingsData = localStorage.getItem('pomodoroSettings');
   return settingsData ? JSON.parse(settingsData) : null;
+};
+
+// Event storage
+export const saveEvents = (events: any[]) => {
+  localStorage.setItem('events', JSON.stringify(events));
+};
+
+export const loadEvents = () => {
+  const eventsData = localStorage.getItem('events');
+  return eventsData ? JSON.parse(eventsData) : null;
 };

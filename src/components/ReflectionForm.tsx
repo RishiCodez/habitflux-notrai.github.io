@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CustomButton from './CustomButton';
 
 interface ReflectionFormProps {
@@ -9,12 +9,26 @@ interface ReflectionFormProps {
     insights: string;
   }) => void;
   onCancel: () => void;
+  initialData?: {
+    accomplishments: string;
+    challenges: string;
+    insights: string;
+  } | null;
 }
 
-const ReflectionForm: React.FC<ReflectionFormProps> = ({ onSubmit, onCancel }) => {
+const ReflectionForm: React.FC<ReflectionFormProps> = ({ onSubmit, onCancel, initialData }) => {
   const [accomplishments, setAccomplishments] = useState('');
   const [challenges, setChallenges] = useState('');
   const [insights, setInsights] = useState('');
+  
+  // Load initial data if provided
+  useEffect(() => {
+    if (initialData) {
+      setAccomplishments(initialData.accomplishments);
+      setChallenges(initialData.challenges);
+      setInsights(initialData.insights);
+    }
+  }, [initialData]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
