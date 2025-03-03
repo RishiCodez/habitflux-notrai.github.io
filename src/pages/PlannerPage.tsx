@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
-import { Calendar, ChevronLeft, ChevronRight, Clock, PlusCircle, X } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, PlusCircle, X, Check } from 'lucide-react';
 import CustomButton from '../components/CustomButton';
-import { loadEvents, saveEvents } from '../utils/localStorageUtils';
+import { loadEvents, saveEvents, checkEventSetupDone, saveEventSetupDone } from '../utils/localStorageUtils';
 import { useToast } from '@/hooks/use-toast';
 
 interface Event {
@@ -57,6 +57,7 @@ const PlannerPage: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showEventForm, setShowEventForm] = useState(false);
+  const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
     title: '',
     start: '09:00',
@@ -69,11 +70,15 @@ const PlannerPage: React.FC = () => {
   // Load events from local storage on component mount
   useEffect(() => {
     const savedEvents = loadEvents();
+    const setupDone = checkEventSetupDone();
+    
     if (savedEvents) {
       setEvents(savedEvents);
+    } else if (!setupDone) {
+      setShowSetupDialog(true);
     } else {
-      setEvents(defaultEvents);
-      saveEvents(defaultEvents);
+      setEvents([]);
+      saveEvents([]);
     }
   }, []);
   
@@ -162,9 +167,73 @@ const PlannerPage: React.FC = () => {
       description: "Your event has been removed from the planner"
     });
   };
+
+  const handleUseDefaultEvents = () => {
+    setEvents(defaultEvents);
+    saveEvents(defaultEvents);
+    saveEventSetupDone();
+    setShowSetupDialog(false);
+    
+    toast({
+      title: "Default schedule created",
+      description: "Your planner has been set up with a default schedule"
+    });
+  };
+
+  const handleStartEmpty = () => {
+    setEvents([]);
+    saveEvents([]);
+    saveEventSetupDone();
+    setShowSetupDialog(false);
+    
+    toast({
+      title: "Empty planner created",
+      description: "Your planner is ready for you to add events"
+    });
+  };
   
   return (
     <AppLayout>
+      {/* First-Time Setup Dialog */}
+      {showSetupDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="glass-card rounded-xl p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold mb-4">Set Up Your Planner</h2>
+            <p className="mb-6 text-muted-foreground">
+              Would you like to start with a default schedule or create your own from scratch?
+            </p>
+            
+            <div className="space-y-4">
+              <button
+                onClick={handleUseDefaultEvents}
+                className="w-full flex items-center justify-between p-4 rounded-lg border hover:bg-accent hover:text-accent-foreground transition-colors text-left dark:border-gray-700"
+              >
+                <div>
+                  <h3 className="font-medium">Use Default Schedule</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Start with a pre-made daily schedule
+                  </p>
+                </div>
+                <Check className="h-5 w-5 text-primary" />
+              </button>
+              
+              <button
+                onClick={handleStartEmpty}
+                className="w-full flex items-center justify-between p-4 rounded-lg border hover:bg-accent hover:text-accent-foreground transition-colors text-left dark:border-gray-700"
+              >
+                <div>
+                  <h3 className="font-medium">Start Empty</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Create your own schedule from scratch
+                  </p>
+                </div>
+                <PlusCircle className="h-5 w-5 text-primary" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Daily Planner</h1>
         <div className="flex items-center space-x-2">
@@ -215,7 +284,7 @@ const PlannerPage: React.FC = () => {
                 type="text"
                 value={newEvent.title}
                 onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
-                className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
                 placeholder="Event title"
               />
             </div>
@@ -227,7 +296,7 @@ const PlannerPage: React.FC = () => {
                   type="time"
                   value={newEvent.start}
                   onChange={(e) => setNewEvent({...newEvent, start: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
               <div>
@@ -236,7 +305,7 @@ const PlannerPage: React.FC = () => {
                   type="time"
                   value={newEvent.end}
                   onChange={(e) => setNewEvent({...newEvent, end: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
             </div>
@@ -246,7 +315,7 @@ const PlannerPage: React.FC = () => {
               <select
                 value={newEvent.category}
                 onChange={(e) => setNewEvent({...newEvent, category: e.target.value as any})}
-                className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
                 <option value="work">Work</option>
                 <option value="personal">Personal</option>

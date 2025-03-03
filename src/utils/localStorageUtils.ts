@@ -11,6 +11,16 @@ export const loadTasks = () => {
   return tasksData ? JSON.parse(tasksData) : null;
 };
 
+// Task lists storage
+export const saveTaskLists = (lists: any[]) => {
+  localStorage.setItem('taskLists', JSON.stringify(lists));
+};
+
+export const loadTaskLists = () => {
+  const listsData = localStorage.getItem('taskLists');
+  return listsData ? JSON.parse(listsData) : null;
+};
+
 // Theme storage
 export const saveTheme = (isDarkMode: boolean) => {
   localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
@@ -74,4 +84,13 @@ export const saveEvents = (events: any[]) => {
 export const loadEvents = () => {
   const eventsData = localStorage.getItem('events');
   return eventsData ? JSON.parse(eventsData) : null;
+};
+
+// First-time event setup flag
+export const saveEventSetupDone = () => {
+  localStorage.setItem('eventSetupDone', 'true');
+};
+
+export const checkEventSetupDone = () => {
+  return localStorage.getItem('eventSetupDone') === 'true';
 };
