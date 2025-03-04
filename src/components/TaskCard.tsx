@@ -20,9 +20,10 @@ interface TaskCardProps {
   onComplete: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (task: Task) => void;
+  lists?: Array<{ id: string; name: string; color: string }>;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit, lists }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const priorityColors = {
@@ -36,6 +37,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit 
     onDelete(task.id);
     setIsMenuOpen(false);
   };
+
+  // Find the list this task belongs to
+  const taskList = task.listId && lists ? lists.find(list => list.id === task.listId) : undefined;
   
   return (
     <div className={cn(
@@ -56,7 +60,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit 
         </button>
         
         <div className="flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h3 className={cn(
               "text-base font-medium transition-all",
               task.completed ? "line-through text-muted-foreground" : ""
@@ -66,6 +70,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit 
             {task.project && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
                 {task.project}
+              </span>
+            )}
+            {taskList && (
+              <span className={cn(
+                "text-xs px-2 py-0.5 rounded-full text-white",
+                taskList.color
+              )}>
+                {taskList.name}
               </span>
             )}
           </div>

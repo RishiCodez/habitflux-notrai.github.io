@@ -1,12 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Task } from './TaskCard';
 import CustomButton from './CustomButton';
 import { v4 as uuidv4 } from 'uuid';
 
+interface TaskList {
+  id: string;
+  name: string;
+  color: string;
+}
+
 interface TaskFormProps {
   task?: Task;
-  lists?: TaskList[];  // Add this property to fix the TypeScript error
+  lists?: TaskList[];
   onSubmit: (task: Task) => void;
   onCancel: () => void;
 }
@@ -17,6 +24,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, lists, onSubmit, onCancel }) 
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [dueDate, setDueDate] = useState('');
   const [project, setProject] = useState('');
+  const [listId, setListId] = useState<string | undefined>(undefined);
   
   useEffect(() => {
     if (task) {
@@ -25,6 +33,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, lists, onSubmit, onCancel }) 
       setPriority(task.priority);
       setDueDate(task.dueDate || '');
       setProject(task.project || '');
+      setListId(task.listId);
     }
   }, [task]);
   
@@ -39,6 +48,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, lists, onSubmit, onCancel }) 
       priority,
       dueDate: dueDate || undefined,
       project: project || undefined,
+      listId: listId,
     };
     
     onSubmit(updatedTask);
@@ -50,6 +60,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, lists, onSubmit, onCancel }) 
       setPriority('medium');
       setDueDate('');
       setProject('');
+      setListId(undefined);
     }
   };
   
@@ -115,18 +126,39 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, lists, onSubmit, onCancel }) 
         </div>
       </div>
       
-      <div>
-        <label htmlFor="project" className="block text-sm font-medium mb-1">
-          Project
-        </label>
-        <input
-          id="project"
-          type="text"
-          value={project}
-          onChange={(e) => setProject(e.target.value)}
-          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-          placeholder="Project name"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="project" className="block text-sm font-medium mb-1">
+            Project
+          </label>
+          <input
+            id="project"
+            type="text"
+            value={project}
+            onChange={(e) => setProject(e.target.value)}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+            placeholder="Project name"
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="listId" className="block text-sm font-medium mb-1">
+            List
+          </label>
+          <select
+            id="listId"
+            value={listId || ''}
+            onChange={(e) => setListId(e.target.value || undefined)}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <option value="">Select a list</option>
+            {lists && lists.map((list) => (
+              <option key={list.id} value={list.id}>
+                {list.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       
       <div className="flex justify-end gap-2">

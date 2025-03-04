@@ -43,7 +43,6 @@ const TasksPage: React.FC = () => {
     if (savedTasks) {
       setTasks(savedTasks);
     } else {
-      // Don't set any default tasks, just initialize with an empty array
       setTasks([]);
       saveTasks([]);
     }
@@ -56,7 +55,6 @@ const TasksPage: React.FC = () => {
       saveTaskLists(defaultLists);
     }
     
-    // Check if this is the first visit to show the tour
     const isFirstVisit = checkFirstVisit();
     if (isFirstVisit) {
       setShowTour(true);
@@ -160,7 +158,6 @@ const TasksPage: React.FC = () => {
   };
 
   const handleDeleteList = (id: string) => {
-    // Don't allow deleting if tasks are associated with this list
     const tasksInList = tasks.filter(task => task.listId === id);
     if (tasksInList.length > 0) {
       toast({
@@ -371,6 +368,7 @@ const TasksPage: React.FC = () => {
             <TaskCard
               key={task.id}
               task={task}
+              lists={taskLists}
               onComplete={handleCompleteTask}
               onDelete={handleDeleteTask}
               onEdit={handleEditTask}
