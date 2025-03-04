@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
-import { Send, User, Bot, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { Send, User, Bot, Mic, MicOff, Volume2, VolumeX, Radio, ActivitySquare } from 'lucide-react';
 import CustomButton from '../components/CustomButton';
 import { useConversation } from '@11labs/react';
 import { Button } from '@/components/ui/button';
@@ -84,8 +84,9 @@ const AssistantPage: React.FC = () => {
     // Send message to ElevenLabs if connected
     if (status === 'connected') {
       try {
-        // This will send the user's input to ElevenLabs for processing
-        await conversation.sendTextMessage(input);
+        // Instead of sendTextMessage, we'll use the proper method from the API
+        // Send user's input to the conversation stream
+        await conversation.send({ text: input });
       } catch (error) {
         console.error('Failed to send message to ElevenLabs:', error);
         toast.error('Failed to send message to voice assistant');
