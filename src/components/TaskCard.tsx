@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Check, Edit, Trash, MoreVertical } from 'lucide-react';
 import CustomButton from './CustomButton';
@@ -12,7 +12,7 @@ export interface Task {
   priority: 'low' | 'medium' | 'high';
   dueDate?: string;
   project?: string;
-  listId?: string;  // Added listId property
+  listId?: string;
 }
 
 interface TaskCardProps {
@@ -25,12 +25,30 @@ interface TaskCardProps {
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit, lists }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   
   const priorityColors = {
     low: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
     medium: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
     high: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
   };
+  
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
   
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent event bubbling
@@ -49,17 +67,24 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit,
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const handleComplete = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
+    onComplete(task.id);
+  };
+
   // Find the list this task belongs to
   const taskList = task.listId && lists ? lists.find(list => list.id === task.listId) : undefined;
   
   return (
-    <div className={cn(
-      "glass-card p-4 rounded-lg transition-all duration-200",
-      task.completed ? "opacity-60" : ""
-    )}>
+    <div 
+      className={cn(
+        "glass-card p-4 rounded-lg transition-all duration-200",
+        task.completed ? "opacity-60" : ""
+      )}
+    >
       <div className="flex items-start gap-4">
         <button
-          onClick={() => onComplete(task.id)}
+          onClick={handleComplete}
           className={cn(
             "flex-shrink-0 w-6 h-6 rounded-full border transition-colors",
             task.completed 
@@ -115,7 +140,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit,
               )}
             </div>
             
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <CustomButton
                 variant="ghost"
                 size="sm"
