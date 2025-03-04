@@ -30,11 +30,13 @@ const AssistantPage: React.FC = () => {
   const [agentId, setAgentId] = useState(() => localStorage.getItem('elevenLabsAgentId') || 'qfrPiYhFRt90nYpjvCue');
   const [apiKeySet, setApiKeySet] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [connectionStarted, setConnectionStarted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Initialize the conversation with correct handlers
   const conversation = useConversation({
     onMessage: (message) => {
+      console.log("Message received:", message);
       if (message.type === 'message' && message.role === 'assistant') {
         const assistantMessage: Message = {
           id: Date.now().toString(),
@@ -44,21 +46,35 @@ const AssistantPage: React.FC = () => {
         };
         
         setMessages(prev => [...prev, assistantMessage]);
+      } else if (message.type === 'transcript' && message.is_final) {
+        const userMessage: Message = {
+          id: Date.now().toString(),
+          content: message.text || '',
+          sender: 'user',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, userMessage]);
       }
     },
     onConnect: () => {
       console.log('Connected to ElevenLabs');
       toast.success('Connected to ElevenLabs voice assistant');
+      setConnectionStarted(true);
+      setIsListening(true);
     },
     onDisconnect: () => {
       console.log('Disconnected from ElevenLabs');
       if (apiKeySet) {
         toast.info('Disconnected from ElevenLabs voice assistant');
       }
+      setConnectionStarted(false);
+      setIsListening(false);
     },
     onError: (error) => {
       console.error('ElevenLabs error:', error);
       toast.error('Error with voice assistant. Please try again.');
+      setIsListening(false);
     }
   });
   
@@ -71,7 +87,6 @@ const AssistantPage: React.FC = () => {
   const handleSendMessage = async () => {
     if (!input.trim()) return;
     
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       content: input,
@@ -81,20 +96,16 @@ const AssistantPage: React.FC = () => {
     
     setMessages(prev => [...prev, userMessage]);
     
-    // Send message to ElevenLabs if connected
     if (status === 'connected') {
       try {
-        // According to @11labs/react docs, this is the correct method to send a message
-        await conversation.startSession(input);
+        await conversation.send({ text: input });
       } catch (error) {
         console.error('Failed to send message to ElevenLabs:', error);
         toast.error('Failed to send message to voice assistant');
         
-        // Fallback to text-only response
         addFallbackResponse(input);
       }
     } else {
-      // Fallback to text-only mode if voice is not connected
       addFallbackResponse(input);
     }
     
@@ -149,23 +160,19 @@ const AssistantPage: React.FC = () => {
     }
 
     try {
-      // Set the API key globally for the ElevenLabs client
-      // @ts-ignore - set API key method is available but might not be properly typed
-      window.ElevenLabsClient = { apiKey };
-
-      // Start the conversation session with the ElevenLabs agent
+      window.localStorage.setItem('elevenLabsApiKey', apiKey);
+      
       await conversation.startSession({
-        agentId: agentId, // Use the agent ID from the input field
+        agentId: agentId,
         overrides: {
           tts: {
-            voiceId: 'EXAVITQu4vr4xnSDxMaL' // Sarah voice
+            voiceId: 'EXAVITQu4vr4xnSDxMaL'
           }
         }
       });
       
       setApiKeySet(true);
       
-      // Save credentials in localStorage for convenience
       localStorage.setItem('elevenLabsApiKey', apiKey);
       localStorage.setItem('elevenLabsAgentId', agentId);
       
@@ -180,6 +187,7 @@ const AssistantPage: React.FC = () => {
     try {
       await conversation.endSession();
       setApiKeySet(false);
+      setIsListening(false);
       toast.info('Voice assistant disconnected');
     } catch (error) {
       console.error('Failed to disconnect:', error);
@@ -198,7 +206,16 @@ const AssistantPage: React.FC = () => {
     }
   };
 
-  // Check for saved credentials on component mount
+  const toggleListening = async () => {
+    if (!connectionStarted) {
+      toast.error('Please connect to the voice assistant first');
+      return;
+    }
+    
+    setIsListening(!isListening);
+    toast.info(isListening ? 'Microphone disabled' : 'Microphone enabled');
+  };
+
   useEffect(() => {
     const savedApiKey = localStorage.getItem('elevenLabsApiKey');
     const savedAgentId = localStorage.getItem('elevenLabsAgentId');
@@ -214,7 +231,7 @@ const AssistantPage: React.FC = () => {
     <AppLayout>
       <div className="flex flex-col h-[calc(100vh-8rem)]">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">AI Productivity Assistant</h1>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">AI Voice Assistant</h1>
           
           {!apiKeySet && (
             <div className="flex gap-2 items-center">
@@ -269,6 +286,24 @@ const AssistantPage: React.FC = () => {
                 </Tooltip>
               </TooltipProvider>
               
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={toggleListening} 
+                      variant={isListening ? "default" : "secondary"}
+                      size="sm"
+                      className={`h-9 w-9 p-0 ${isListening ? 'bg-green-500 hover:bg-green-600' : ''}`}
+                    >
+                      <Mic className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isListening ? 'Disable Microphone' : 'Enable Microphone'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
               <Button 
                 onClick={handleDisconnect} 
                 variant="secondary" 
@@ -283,7 +318,6 @@ const AssistantPage: React.FC = () => {
         </div>
         
         <div className="flex-1 rounded-xl overflow-hidden flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900/80 dark:via-indigo-950/40 dark:to-purple-950/30 border border-indigo-100 dark:border-indigo-900/40 shadow-lg">
-          {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-4">
               {messages.map((message) => (
@@ -327,32 +361,48 @@ const AssistantPage: React.FC = () => {
             </div>
           </div>
           
-          {/* Speaking Indicator */}
-          {isSpeaking && status === 'connected' && (
-            <div className="py-2 px-4 bg-primary/10 text-center text-sm animate-pulse flex items-center justify-center gap-2">
-              <span className="inline-block h-2 w-2 rounded-full bg-indigo-500 animate-ping"></span>
-              <span>Assistant is speaking...</span>
-            </div>
-          )}
-          
-          {/* Status Indicator */}
-          {status === 'connected' && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border-t border-blue-100 dark:border-blue-900/30 py-1">
-              <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center justify-center gap-1">
+          <div className="py-2 px-4 bg-primary/5 border-t border-primary/10 flex justify-between items-center text-sm">
+            {isListening && status === 'connected' && (
+              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span>Listening...</span>
+              </div>
+            )}
+            
+            {isSpeaking && status === 'connected' && (
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                <span className="inline-block h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>
+                <span>Speaking...</span>
+              </div>
+            )}
+            
+            {status === 'connected' && !isListening && !isSpeaking && (
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                <span className="inline-block h-2 w-2 rounded-full bg-gray-500"></span>
+                <span>Idle</span>
+              </div>
+            )}
+            
+            {status === 'connected' ? (
+              <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                 <span className="h-2 w-2 bg-green-500 rounded-full"></span>
-                Voice assistant connected
-              </p>
-            </div>
-          )}
+                Voice connected
+              </span>
+            ) : (
+              <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                <span className="h-2 w-2 bg-gray-500 rounded-full"></span>
+                Voice disconnected
+              </span>
+            )}
+          </div>
           
-          {/* Input Field */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
             <div className="flex items-center space-x-2">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type your message..."
+                placeholder="Type your message or speak..."
                 className="flex-1 h-12 max-h-32 px-4 py-2 border border-indigo-100 dark:border-indigo-800 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400/50 resize-none bg-white dark:bg-gray-800 dark:text-white shadow-sm"
                 rows={1}
               />
@@ -366,7 +416,9 @@ const AssistantPage: React.FC = () => {
             </div>
             <div className="flex justify-between mt-2">
               <p className="text-xs text-muted-foreground">
-                Press Enter to send, Shift+Enter for new line
+                {status === 'connected' ? 
+                  isListening ? 'Speak or type and press Enter to send' : 'Type and press Enter to send' :
+                  'Press Enter to send, Shift+Enter for new line'}
               </p>
               {status === 'connected' && (
                 <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
