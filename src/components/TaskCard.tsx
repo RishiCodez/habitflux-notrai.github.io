@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 export interface Task {
   id: string;
@@ -121,15 +122,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit,
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <CustomButton
+                <Button
                   variant="ghost"
                   size="sm"
-                  className="p-1"
+                  className="p-1 h-8 w-8"
                 >
                   <MoreVertical className="h-4 w-4" />
-                </CustomButton>
+                </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={5}>
+              <DropdownMenuContent align="end" className="w-36 z-50">
                 <DropdownMenuItem onClick={handleEdit}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
