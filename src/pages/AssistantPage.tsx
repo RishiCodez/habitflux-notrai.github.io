@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
@@ -28,6 +27,7 @@ const AssistantPage: React.FC = () => {
   
   const [input, setInput] = useState('');
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('elevenLabsApiKey') || '');
+  const [agentId, setAgentId] = useState(() => localStorage.getItem('elevenLabsAgentId') || 'qfrPiYhFRt90nYpjvCue');
   const [apiKeySet, setApiKeySet] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -84,9 +84,8 @@ const AssistantPage: React.FC = () => {
     // Send message to ElevenLabs if connected
     if (status === 'connected') {
       try {
-        // Instead of sendTextMessage, we'll use the proper method from the API
-        // Send user's input to the conversation stream
-        await conversation.send({ text: input });
+        // According to @11labs/react docs, this is the correct method to send a message
+        await conversation.startSession(input);
       } catch (error) {
         console.error('Failed to send message to ElevenLabs:', error);
         toast.error('Failed to send message to voice assistant');
@@ -144,6 +143,11 @@ const AssistantPage: React.FC = () => {
       return;
     }
 
+    if (!agentId) {
+      toast.error('Please enter your ElevenLabs Agent ID');
+      return;
+    }
+
     try {
       // Set the API key globally for the ElevenLabs client
       // @ts-ignore - set API key method is available but might not be properly typed
@@ -151,7 +155,7 @@ const AssistantPage: React.FC = () => {
 
       // Start the conversation session with the ElevenLabs agent
       await conversation.startSession({
-        agentId: 'qfrPiYhFRt90nYpjvCue', // Public productivity assistant agent
+        agentId: agentId, // Use the agent ID from the input field
         overrides: {
           tts: {
             voiceId: 'EXAVITQu4vr4xnSDxMaL' // Sarah voice
@@ -161,13 +165,14 @@ const AssistantPage: React.FC = () => {
       
       setApiKeySet(true);
       
-      // Set API key in localStorage for convenience
+      // Save credentials in localStorage for convenience
       localStorage.setItem('elevenLabsApiKey', apiKey);
+      localStorage.setItem('elevenLabsAgentId', agentId);
       
       toast.success('Voice assistant connected!');
     } catch (error) {
       console.error('Failed to connect:', error);
-      toast.error('Failed to connect to ElevenLabs. Please check your API key.');
+      toast.error('Failed to connect to ElevenLabs. Please check your API key and Agent ID.');
     }
   };
 
@@ -193,11 +198,15 @@ const AssistantPage: React.FC = () => {
     }
   };
 
-  // Check for saved API key on component mount
+  // Check for saved credentials on component mount
   useEffect(() => {
     const savedApiKey = localStorage.getItem('elevenLabsApiKey');
+    const savedAgentId = localStorage.getItem('elevenLabsAgentId');
     if (savedApiKey) {
       setApiKey(savedApiKey);
+    }
+    if (savedAgentId) {
+      setAgentId(savedAgentId);
     }
   }, []);
   
@@ -209,17 +218,26 @@ const AssistantPage: React.FC = () => {
           
           {!apiKeySet && (
             <div className="flex gap-2 items-center">
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Enter ElevenLabs API Key"
-                className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-              />
+              <div className="flex flex-col gap-2">
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="Enter ElevenLabs API Key"
+                  className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                />
+                <input
+                  type="text"
+                  value={agentId}
+                  onChange={(e) => setAgentId(e.target.value)}
+                  placeholder="Enter ElevenLabs Agent ID"
+                  className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                />
+              </div>
               <Button 
                 onClick={handleConnect} 
                 size="sm"
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 h-full"
               >
                 <Mic className="mr-2 h-4 w-4" />
                 Connect Voice
@@ -228,7 +246,11 @@ const AssistantPage: React.FC = () => {
           )}
           
           {apiKeySet && (
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <div className="text-sm mr-2 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-md">
+                <span className="font-medium">Agent ID:</span> {agentId.substring(0, 10)}...
+              </div>
+              
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
