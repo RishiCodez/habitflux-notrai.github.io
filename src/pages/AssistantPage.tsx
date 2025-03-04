@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
@@ -33,6 +32,7 @@ const AssistantPage: React.FC = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [connectionStarted, setConnectionStarted] = useState(false);
+  const [micPermissionGranted, setMicPermissionGranted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const conversation = useConversation({
@@ -48,6 +48,7 @@ const AssistantPage: React.FC = () => {
         
         setMessages(prev => [...prev, assistantMessage]);
       } else if (message.type === 'transcript' && message.is_final) {
+        console.log("Transcript received:", message.text);
         const userMessage: Message = {
           id: Date.now().toString(),
           content: message.text || '',
@@ -85,6 +86,21 @@ const AssistantPage: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
+  useEffect(() => {
+    const checkMicPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setMicPermissionGranted(true);
+        stream.getTracks().forEach(track => track.stop());
+      } catch (err) {
+        console.error('Microphone permission not granted:', err);
+        setMicPermissionGranted(false);
+      }
+    };
+    
+    checkMicPermission();
+  }, []);
+  
   const handleSendMessage = async () => {
     if (!input.trim()) return;
     
@@ -99,10 +115,6 @@ const AssistantPage: React.FC = () => {
     
     if (status === 'connected') {
       try {
-        // For text input in a voice conversation,
-        // we just display the message and let the voice agent respond
-        // The @11labs/react library doesn't have a direct text input method
-        // The voice agent will still respond to the displayed message
         setInput('');
       } catch (error) {
         console.error('Failed to send message to ElevenLabs:', error);
@@ -165,23 +177,14 @@ const AssistantPage: React.FC = () => {
     }
 
     try {
-      // Save API key to localStorage and set up environment
       localStorage.setItem('elevenLabsApiKey', apiKey);
       localStorage.setItem('elevenLabsAgentId', agentId);
       
-      // Request microphone access before connecting
-      try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (micError) {
-        console.error('Microphone access denied:', micError);
-        toast.error('Microphone access is required for voice conversation. Please allow microphone access.');
-        return;
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMicPermissionGranted(true);
       
-      // Set the API key in the window object for the @11labs/react library
       window.localStorage.setItem('elevenlabs_api_key', apiKey);
       
-      // Start the voice conversation session with the agent ID
       await conversation.startSession({
         agentId: agentId,
         overrides: {
@@ -192,7 +195,7 @@ const AssistantPage: React.FC = () => {
       });
       
       setApiKeySet(true);
-      
+      console.log('Voice assistant connected and listening');
       toast.success('Voice assistant connected! You can now speak or type.');
     } catch (error) {
       console.error('Failed to connect:', error);
@@ -229,10 +232,12 @@ const AssistantPage: React.FC = () => {
       return;
     }
     
-    // The @11labs/react library handles microphone input automatically
-    // We just track the state for UI purposes
-    setIsListening(!isListening);
-    toast.info(isListening ? 'Microphone disabled' : 'Microphone enabled');
+    const newListeningState = !isListening;
+    setIsListening(newListeningState);
+    
+    toast.info(newListeningState ? 'Microphone enabled' : 'Microphone disabled');
+    
+    console.log('Listening state toggled:', newListeningState);
   };
 
   useEffect(() => {
@@ -314,7 +319,7 @@ const AssistantPage: React.FC = () => {
                       size="sm"
                       className={`h-9 w-9 p-0 ${isListening ? 'bg-green-500 hover:bg-green-600' : ''}`}
                     >
-                      <Mic className="h-4 w-4" />
+                      {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -402,6 +407,13 @@ const AssistantPage: React.FC = () => {
               </div>
             )}
             
+            {!micPermissionGranted && (
+              <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                <span className="inline-block h-2 w-2 rounded-full bg-red-500"></span>
+                <span>Microphone access needed</span>
+              </div>
+            )}
+            
             {status === 'connected' ? (
               <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                 <span className="h-2 w-2 bg-green-500 rounded-full"></span>
@@ -439,9 +451,15 @@ const AssistantPage: React.FC = () => {
                   isListening ? 'Speak or type and press Enter to send' : 'Type and press Enter to send' :
                   'Press Enter to send, Shift+Enter for new line'}
               </p>
-              {status === 'connected' && (
-                <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                  <span className="h-2 w-2 bg-green-500 rounded-full"></span> Voice connected
+              {micPermissionGranted ? (
+                status === 'connected' && (
+                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <span className="h-2 w-2 bg-green-500 rounded-full"></span> Voice connected
+                  </p>
+                )
+              ) : (
+                <p className="text-xs text-red-500 flex items-center gap-1">
+                  <span className="h-2 w-2 bg-red-500 rounded-full"></span> Microphone access needed
                 </p>
               )}
             </div>
