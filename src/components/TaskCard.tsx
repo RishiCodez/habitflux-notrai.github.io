@@ -151,7 +151,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit,
               </CustomButton>
               
               {isMenuOpen && (
-                <div className="absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-card border z-10">
+                <div className="absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-card border z-50">
                   <div className="py-1">
                     <button
                       className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
