@@ -38,6 +38,17 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit,
     setIsMenuOpen(false);
   };
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
+    onEdit(task);
+    setIsMenuOpen(false);
+  };
+  
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   // Find the list this task belongs to
   const taskList = task.listId && lists ? lists.find(list => list.id === task.listId) : undefined;
   
@@ -109,7 +120,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit,
                 variant="ghost"
                 size="sm"
                 className="p-1"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={handleMenuToggle}
               >
                 <MoreVertical className="h-4 w-4" />
               </CustomButton>
@@ -119,10 +130,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit,
                   <div className="py-1">
                     <button
                       className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                      onClick={() => {
-                        onEdit(task);
-                        setIsMenuOpen(false);
-                      }}
+                      onClick={handleEdit}
                     >
                       <Edit className="h-4 w-4" />
                       Edit
