@@ -3,6 +3,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Check, Edit, Trash, MoreVertical } from 'lucide-react';
 import CustomButton from './CustomButton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export interface Task {
   id: string;
@@ -24,47 +30,20 @@ interface TaskCardProps {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit, lists }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  
   const priorityColors = {
     low: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
     medium: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
     high: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
   };
   
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isMenuOpen]);
-  
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent event bubbling
     onDelete(task.id);
-    setIsMenuOpen(false);
   };
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent event bubbling
     onEdit(task);
-    setIsMenuOpen(false);
-  };
-  
-  const handleMenuToggle = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
-    setIsMenuOpen(!isMenuOpen);
   };
 
   const handleComplete = (e: React.MouseEvent) => {
@@ -78,7 +57,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit,
   return (
     <div 
       className={cn(
-        "glass-card p-4 rounded-lg transition-all duration-200",
+        "glass-card p-4 rounded-lg transition-all duration-200 relative",
         task.completed ? "opacity-60" : ""
       )}
     >
@@ -140,37 +119,30 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit,
               )}
             </div>
             
-            <div className="relative" ref={menuRef}>
-              <CustomButton
-                variant="ghost"
-                size="sm"
-                className="p-1"
-                onClick={handleMenuToggle}
-              >
-                <MoreVertical className="h-4 w-4" />
-              </CustomButton>
-              
-              {isMenuOpen && (
-                <div className="absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-card border z-50">
-                  <div className="py-1">
-                    <button
-                      className="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                      onClick={handleEdit}
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </button>
-                    <button
-                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      onClick={handleDelete}
-                    >
-                      <Trash className="h-4 w-4" />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <CustomButton
+                  variant="ghost"
+                  size="sm"
+                  className="p-1"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </CustomButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={5}>
+                <DropdownMenuItem onClick={handleEdit}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleDelete}
+                  className="text-red-600 hover:text-red-700 focus:text-red-700"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
