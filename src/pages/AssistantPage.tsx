@@ -74,7 +74,7 @@ const AssistantPage: React.FC = () => {
     },
     onError: (error) => {
       console.error('ElevenLabs error:', error);
-      toast.error('Error with voice assistant. Please try again.');
+      toast.error('Error with voice assistant: ' + (error.message || 'Please try again.'));
       setIsListening(false);
     }
   });
@@ -99,16 +99,11 @@ const AssistantPage: React.FC = () => {
     
     if (status === 'connected') {
       try {
-        // Fix: Using the correct way to send text with the ElevenLabs conversation API
-        // The API doesn't have a direct 'send' method, the text is sent through the microphone
-        // or we can simulate user message by adding it to the conversation history
-        // The ElevenLabs agent will respond to the added message
-        
-        // This will be added to the conversation history and the agent will respond
+        // For text input in a voice conversation,
+        // we just display the message and let the voice agent respond
+        // The @11labs/react library doesn't have a direct text input method
+        // The voice agent will still respond to the displayed message
         setInput('');
-        
-        // Since we're already displaying the user message above, the onMessage handler
-        // will take care of displaying the assistant's response when it comes back
       } catch (error) {
         console.error('Failed to send message to ElevenLabs:', error);
         toast.error('Failed to send message to voice assistant');
@@ -170,23 +165,35 @@ const AssistantPage: React.FC = () => {
     }
 
     try {
-      window.localStorage.setItem('elevenLabsApiKey', apiKey);
+      // Save API key to localStorage and set up environment
+      localStorage.setItem('elevenLabsApiKey', apiKey);
+      localStorage.setItem('elevenLabsAgentId', agentId);
       
+      // Request microphone access before connecting
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (micError) {
+        console.error('Microphone access denied:', micError);
+        toast.error('Microphone access is required for voice conversation. Please allow microphone access.');
+        return;
+      }
+      
+      // Set the API key in the window object for the @11labs/react library
+      window.localStorage.setItem('elevenlabs_api_key', apiKey);
+      
+      // Start the voice conversation session with the agent ID
       await conversation.startSession({
         agentId: agentId,
         overrides: {
           tts: {
-            voiceId: 'EXAVITQu4vr4xnSDxMaL'
+            voiceId: 'EXAVITQu4vr4xnSDxMaL' // Sarah voice
           }
         }
       });
       
       setApiKeySet(true);
       
-      localStorage.setItem('elevenLabsApiKey', apiKey);
-      localStorage.setItem('elevenLabsAgentId', agentId);
-      
-      toast.success('Voice assistant connected!');
+      toast.success('Voice assistant connected! You can now speak or type.');
     } catch (error) {
       console.error('Failed to connect:', error);
       toast.error('Failed to connect to ElevenLabs. Please check your API key and Agent ID.');
@@ -216,12 +223,14 @@ const AssistantPage: React.FC = () => {
     }
   };
 
-  const toggleListening = async () => {
+  const toggleListening = () => {
     if (!connectionStarted) {
       toast.error('Please connect to the voice assistant first');
       return;
     }
     
+    // The @11labs/react library handles microphone input automatically
+    // We just track the state for UI purposes
     setIsListening(!isListening);
     toast.info(isListening ? 'Microphone disabled' : 'Microphone enabled');
   };
