@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Task } from './TaskCard';
@@ -43,17 +42,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, lists, onSubmit, onCancel }) 
     const updatedTask: Task = {
       id: task ? task.id : uuidv4(),
       title,
-      description: description || undefined,
       completed: task ? task.completed : false,
       priority,
-      dueDate: dueDate || undefined,
-      project: project || undefined,
-      listId: listId,
+      ...(description ? { description } : {}),
+      ...(dueDate ? { dueDate } : {}),
+      ...(project ? { project } : {}),
+      ...(listId ? { listId } : {})
     };
     
     onSubmit(updatedTask);
     
-    // Reset form if creating a new task
     if (!task) {
       setTitle('');
       setDescription('');

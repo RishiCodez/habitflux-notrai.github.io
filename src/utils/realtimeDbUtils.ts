@@ -19,6 +19,16 @@ const checkDatabaseConnection = () => {
   return database;
 };
 
+// Helper function to remove undefined values from an object
+const removeUndefinedValues = (obj: any): any => {
+  return Object.entries(obj).reduce((acc: any, [key, value]) => {
+    if (value !== undefined) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+};
+
 // Shared task list operations
 export const createSharedTaskList = async (name: string, createdBy: string) => {
   try {
@@ -79,12 +89,15 @@ export const addTaskToSharedList = async (
       throw new Error('Failed to generate a new task ID');
     }
     
-    await set(newTaskRef, {
+    // Remove any undefined values to prevent Firebase errors
+    const cleanTask = removeUndefinedValues({
       ...task,
       id: taskId,
       sharedId: listId,
       createdAt: new Date().toISOString(),
     });
+    
+    await set(newTaskRef, cleanTask);
     
     return taskId;
   } catch (error) {
@@ -101,11 +114,14 @@ export const updateSharedTask = async (
   try {
     const db = checkDatabaseConnection();
     
-    const taskRef = ref(db, `sharedLists/${listId}/tasks/${taskId}`);
-    await update(taskRef, {
+    // Remove undefined values to prevent Firebase errors
+    const cleanUpdates = removeUndefinedValues({
       ...updates,
       updatedAt: new Date().toISOString(),
     });
+    
+    const taskRef = ref(db, `sharedLists/${listId}/tasks/${taskId}`);
+    await update(taskRef, cleanUpdates);
   } catch (error) {
     console.error('Error updating shared task:', error);
     throw error;
