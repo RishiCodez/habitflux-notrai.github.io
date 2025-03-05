@@ -71,6 +71,32 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
     setTimeout(() => setIsCopied(false), 2000);
   };
 
+  const renderFirebaseRulesHelp = () => {
+    if (!error || !error.includes('Firebase Realtime Database security rules')) return null;
+    
+    return (
+      <div className="mt-2 p-3 bg-amber-50 text-amber-800 rounded-md border border-amber-200">
+        <h4 className="font-medium">How to fix Firebase security rules:</h4>
+        <ol className="list-decimal pl-5 text-sm mt-1 space-y-1">
+          <li>Go to <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="underline">Firebase Console</a></li>
+          <li>Select your project</li>
+          <li>Navigate to "Realtime Database" in the left sidebar</li>
+          <li>Click on the "Rules" tab</li>
+          <li>Update the rules to allow read/write access:</li>
+        </ol>
+        <pre className="mt-2 bg-gray-800 text-white p-2 rounded overflow-x-auto text-xs">
+{`{
+  "rules": {
+    ".read": "true",
+    ".write": "true"
+  }
+}`}
+        </pre>
+        <p className="text-xs mt-2 italic">Note: These rules allow anyone to read/write your database. For production apps, use stricter rules.</p>
+      </div>
+    );
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -87,15 +113,10 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md flex items-start space-x-2">
             <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <p className="font-medium">Error</p>
-              <p className="text-sm">{error}</p>
-              {error.includes('security rules') && (
-                <p className="text-sm mt-1">
-                  Go to your Firebase Console, navigate to Realtime Database, select the "Rules" tab,
-                  and update the rules to allow read/write access.
-                </p>
-              )}
+              <p className="text-sm whitespace-pre-line">{error}</p>
+              {renderFirebaseRulesHelp()}
             </div>
           </div>
         )}

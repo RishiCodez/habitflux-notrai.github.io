@@ -48,8 +48,15 @@ export const createSharedTaskList = async (name: string, createdBy: string) => {
     // Enhanced error handling for permission issues
     if (error.message && error.message.includes('PERMISSION_DENIED')) {
       throw new Error(
-        'Permission denied. You need to update your Firebase Realtime Database security rules. ' +
-        'Go to the Firebase Console > Realtime Database > Rules and set rules to allow read/write access.'
+        'Permission denied. You need to update your Firebase Realtime Database security rules.\n\n' +
+        'Go to the Firebase Console > Realtime Database > Rules and set the rules to:\n\n' +
+        '{\n' +
+        '  "rules": {\n' +
+        '    ".read": "true",\n' +
+        '    ".write": "true"\n' +
+        '  }\n' +
+        '}\n\n' +
+        'Note: These rules allow anyone to read/write your database. For production, use proper authentication rules.'
       );
     }
     
@@ -148,7 +155,15 @@ export const addCollaborator = async (listId: string, userId: string) => {
     // Enhanced error handling for permission issues
     if (error.message && error.message.includes('PERMISSION_DENIED')) {
       throw new Error(
-        'Permission denied. You need to update your Firebase Realtime Database security rules.'
+        'Permission denied. You need to update your Firebase Realtime Database security rules.\n\n' +
+        'Go to the Firebase Console > Realtime Database > Rules and set the rules to:\n\n' +
+        '{\n' +
+        '  "rules": {\n' +
+        '    ".read": "true",\n' +
+        '    ".write": "true"\n' +
+        '  }\n' +
+        '}\n\n' +
+        'Note: These rules allow anyone to read/write your database. For production, use proper authentication rules.'
       );
     }
     
