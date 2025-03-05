@@ -1,13 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, Search, ListFilter, FolderPlus, CheckSquare } from 'lucide-react';
+import { Plus, Search, ListFilter, FolderPlus, CheckSquare, Users, Share2 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import TaskCard, { Task } from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
 import CustomButton from '../components/CustomButton';
+import SharedTaskList from '../components/SharedTaskList';
 import { useToast } from '@/hooks/use-toast';
-import { saveTasks, loadTasks, saveTaskLists, loadTaskLists, checkFirstVisit, saveFirstVisitComplete } from '../utils/localStorageUtils';
+import { 
+  saveTasks, 
+  loadTasks, 
+  saveTaskLists, 
+  loadTaskLists, 
+  checkFirstVisit, 
+  saveFirstVisitComplete 
+} from '../utils/localStorageUtils';
+import { 
+  createSharedTaskList, 
+  getSharedListIdFromUrl 
+} from '../utils/realtimeDbUtils';
 import TourGuide from '../components/TourGuide';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 interface TaskList {
   id: string;
@@ -35,6 +50,10 @@ const TasksPage: React.FC = () => {
   const [newListName, setNewListName] = useState('');
   const [newListColor, setNewListColor] = useState('bg-blue-500');
   const [showTour, setShowTour] = useState(false);
+  const [showSharedListModal, setShowSharedListModal] = useState(false);
+  const [newSharedListName, setNewSharedListName] = useState('');
+  const [sharedListId, setSharedListId] = useState<string | null>(null);
+  const [isCreatingSharedList, setIsCreatingSharedList] = useState(false);
   
   const { toast } = useToast();
 
@@ -58,6 +77,12 @@ const TasksPage: React.FC = () => {
     const isFirstVisit = checkFirstVisit();
     if (isFirstVisit) {
       setShowTour(true);
+    }
+    
+    // Check if accessing a shared list via URL
+    const urlSharedListId = getSharedListIdFromUrl();
+    if (urlSharedListId) {
+      setSharedListId(urlSharedListId);
     }
   }, []);
 
@@ -195,209 +220,316 @@ const TasksPage: React.FC = () => {
     });
   };
   
+  const handleCreateSharedList = async () => {
+    if (!newSharedListName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a name for your shared list",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsCreatingSharedList(true);
+    
+    try {
+      // Using a placeholder user ID until we add authentication
+      const userId = 'user-' + Math.random().toString(36).substr(2, 9);
+      const newSharedListId = await createSharedTaskList(newSharedListName, userId);
+      
+      setSharedListId(newSharedListId);
+      setShowSharedListModal(false);
+      
+      toast({
+        title: "Shared list created",
+        description: `"${newSharedListName}" collaborative list has been created.`
+      });
+    } catch (error) {
+      toast({
+        title: "Error creating shared list",
+        description: "There was a problem creating your shared list",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingSharedList(false);
+      setNewSharedListName('');
+    }
+  };
+  
+  const handleBackToMyTasks = () => {
+    setSharedListId(null);
+    
+    // Remove the shared parameter from the URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('shared');
+    window.history.replaceState({}, '', url.toString());
+  };
+  
   return (
     <AppLayout>
       {showTour && <TourGuide onComplete={handleTourComplete} />}
       
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Task Management</h1>
+        <h1 className="text-2xl font-bold">
+          {sharedListId ? 'Collaborative Tasks' : 'Task Management'}
+        </h1>
+        
         <div className="flex space-x-2">
-          <CustomButton onClick={() => setShowListForm(true)} variant="outline" id="new-list-button">
-            <FolderPlus className="mr-2 h-4 w-4" />
-            New List
-          </CustomButton>
-          <CustomButton onClick={() => setShowForm(true)} id="add-task-button">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Task
-          </CustomButton>
+          {sharedListId ? (
+            <CustomButton onClick={handleBackToMyTasks} variant="outline">
+              Back to My Tasks
+            </CustomButton>
+          ) : (
+            <>
+              <CustomButton onClick={() => setShowSharedListModal(true)} variant="outline">
+                <Users className="mr-2 h-4 w-4" />
+                New Shared List
+              </CustomButton>
+              <CustomButton onClick={() => setShowListForm(true)} variant="outline" id="new-list-button">
+                <FolderPlus className="mr-2 h-4 w-4" />
+                New List
+              </CustomButton>
+              <CustomButton onClick={() => setShowForm(true)} id="add-task-button">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Task
+              </CustomButton>
+            </>
+          )}
         </div>
       </div>
       
-      {/* Lists Bar */}
-      <div className="mb-6 glass-card p-3 rounded-lg overflow-x-auto" id="lists-bar">
-        <div className="flex space-x-2 min-w-max">
-          <button
-            onClick={() => setListFilter(null)}
-            className={cn(
-              "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-              !listFilter 
-                ? "bg-primary text-primary-foreground" 
-                : "hover:bg-accent hover:text-accent-foreground"
-            )}
-          >
-            <CheckSquare className="h-4 w-4 mr-2 inline-block" />
-            All Tasks
-          </button>
-          
-          {taskLists.map(list => (
-            <button
-              key={list.id}
-              onClick={() => setListFilter(list.id)}
-              className={cn(
-                "px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center",
-                listFilter === list.id 
-                  ? "bg-primary text-primary-foreground" 
-                  : "hover:bg-accent hover:text-accent-foreground"
-              )}
-            >
-              <span className={`h-3 w-3 rounded-full mr-2 ${list.color}`}></span>
-              {list.name}
-            </button>
-          ))}
-        </div>
-      </div>
-      
-      {showListForm && (
-        <div className="mb-6 glass-card p-6 rounded-xl">
-          <h2 className="text-xl font-semibold mb-4">Create New List</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">List Name</label>
-              <input
-                type="text"
-                value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                placeholder="Enter list name"
-              />
+      {sharedListId ? (
+        <SharedTaskList sharedListId={sharedListId} />
+      ) : (
+        <>
+          {/* Lists Bar */}
+          <div className="mb-6 glass-card p-3 rounded-lg overflow-x-auto" id="lists-bar">
+            <div className="flex space-x-2 min-w-max">
+              <button
+                onClick={() => setListFilter(null)}
+                className={cn(
+                  "px-4 py-2 rounded-md text-sm font-medium transition-colors",
+                  !listFilter 
+                    ? "bg-primary text-primary-foreground" 
+                    : "hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
+                <CheckSquare className="h-4 w-4 mr-2 inline-block" />
+                All Tasks
+              </button>
+              
+              {taskLists.map(list => (
+                <button
+                  key={list.id}
+                  onClick={() => setListFilter(list.id)}
+                  className={cn(
+                    "px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center",
+                    listFilter === list.id 
+                      ? "bg-primary text-primary-foreground" 
+                      : "hover:bg-accent hover:text-accent-foreground"
+                  )}
+                >
+                  <span className={`h-3 w-3 rounded-full mr-2 ${list.color}`}></span>
+                  {list.name}
+                </button>
+              ))}
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">List Color</label>
-              <div className="flex flex-wrap gap-2">
-                {colorOptions.map(color => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setNewListColor(color)}
-                    className={cn(
-                      `h-8 w-8 rounded-full ${color}`,
-                      newListColor === color && "ring-2 ring-offset-2 ring-primary"
-                    )}
+          </div>
+          
+          {showListForm && (
+            <div className="mb-6 glass-card p-6 rounded-xl">
+              <h2 className="text-xl font-semibold mb-4">Create New List</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">List Name</label>
+                  <input
+                    type="text"
+                    value={newListName}
+                    onChange={(e) => setNewListName(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    placeholder="Enter list name"
                   />
-                ))}
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">List Color</label>
+                  <div className="flex flex-wrap gap-2">
+                    {colorOptions.map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setNewListColor(color)}
+                        className={cn(
+                          `h-8 w-8 rounded-full ${color}`,
+                          newListColor === color && "ring-2 ring-offset-2 ring-primary"
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-2">
+                  <CustomButton 
+                    variant="outline" 
+                    onClick={() => setShowListForm(false)}
+                  >
+                    Cancel
+                  </CustomButton>
+                  <CustomButton onClick={handleAddList}>
+                    Create List
+                  </CustomButton>
+                </div>
               </div>
             </div>
-            
-            <div className="flex justify-end space-x-2">
-              <CustomButton 
-                variant="outline" 
-                onClick={() => setShowListForm(false)}
-              >
-                Cancel
-              </CustomButton>
-              <CustomButton onClick={handleAddList}>
-                Create List
-              </CustomButton>
+          )}
+          
+          <div className="mb-6 space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search tasks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-full h-10 rounded-md border focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value as 'all' | 'active' | 'completed')}
+                  className="h-10 rounded-md border focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                >
+                  <option value="all">All Tasks</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                </select>
+                
+                <select
+                  value={priorityFilter || ''}
+                  onChange={(e) => setPriorityFilter(e.target.value ? e.target.value as 'low' | 'medium' | 'high' : null)}
+                  className="h-10 rounded-md border focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                >
+                  <option value="">All Priorities</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+                
+                <select
+                  value={projectFilter || ''}
+                  onChange={(e) => setProjectFilter(e.target.value || null)}
+                  className="h-10 rounded-md border focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                >
+                  <option value="">All Projects</option>
+                  {projects.map((project) => (
+                    <option key={project} value={project}>
+                      {project}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
-      
-      <div className="mb-6 space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-full h-10 rounded-md border focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-            />
           </div>
           
-          <div className="flex gap-2">
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as 'all' | 'active' | 'completed')}
-              className="h-10 rounded-md border focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-            >
-              <option value="all">All Tasks</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-            </select>
-            
-            <select
-              value={priorityFilter || ''}
-              onChange={(e) => setPriorityFilter(e.target.value ? e.target.value as 'low' | 'medium' | 'high' : null)}
-              className="h-10 rounded-md border focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-            >
-              <option value="">All Priorities</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-            
-            <select
-              value={projectFilter || ''}
-              onChange={(e) => setProjectFilter(e.target.value || null)}
-              className="h-10 rounded-md border focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-            >
-              <option value="">All Projects</option>
-              {projects.map((project) => (
-                <option key={project} value={project}>
-                  {project}
-                </option>
-              ))}
-            </select>
+          {showForm && (
+            <div className="mb-6 glass-card p-6 rounded-xl">
+              <h2 className="text-xl font-semibold mb-4">
+                {editingTask ? 'Edit Task' : 'Add New Task'}
+              </h2>
+              <TaskForm
+                task={editingTask}
+                lists={taskLists}
+                onSubmit={handleAddTask}
+                onCancel={() => {
+                  setShowForm(false);
+                  setEditingTask(undefined);
+                }}
+              />
+            </div>
+          )}
+          
+          <div className="space-y-4" id="tasks-container">
+            {filteredTasks.length > 0 ? (
+              filteredTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  lists={taskLists}
+                  onComplete={handleCompleteTask}
+                  onDelete={handleDeleteTask}
+                  onEdit={handleEditTask}
+                />
+              ))
+            ) : (
+              <div className="glass-card p-8 rounded-xl text-center">
+                <div className="flex flex-col items-center justify-center">
+                  <img 
+                    src="/lovable-uploads/ee69a7fe-8e00-4753-909b-b10210f77674.png" 
+                    alt="Person working at desk" 
+                    className="max-w-full h-auto max-h-64 mb-6"
+                  />
+                  <h3 className="text-lg font-medium">No tasks found</h3>
+                  <p className="text-muted-foreground">
+                    {searchQuery || filter !== 'all' || projectFilter || priorityFilter || listFilter
+                      ? "Try adjusting your filters to see more tasks."
+                      : "Add a new task to get started."}
+                  </p>
+                  {!showForm && (
+                    <CustomButton onClick={() => setShowForm(true)} className="mt-4">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Your First Task
+                    </CustomButton>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      </div>
-      
-      {showForm && (
-        <div className="mb-6 glass-card p-6 rounded-xl">
-          <h2 className="text-xl font-semibold mb-4">
-            {editingTask ? 'Edit Task' : 'Add New Task'}
-          </h2>
-          <TaskForm
-            task={editingTask}
-            lists={taskLists}
-            onSubmit={handleAddTask}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingTask(undefined);
-            }}
-          />
-        </div>
+        </>
       )}
       
-      <div className="space-y-4" id="tasks-container">
-        {filteredTasks.length > 0 ? (
-          filteredTasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              lists={taskLists}
-              onComplete={handleCompleteTask}
-              onDelete={handleDeleteTask}
-              onEdit={handleEditTask}
-            />
-          ))
-        ) : (
-          <div className="glass-card p-8 rounded-xl text-center">
-            <div className="flex flex-col items-center justify-center">
-              <img 
-                src="/lovable-uploads/ee69a7fe-8e00-4753-909b-b10210f77674.png" 
-                alt="Person working at desk" 
-                className="max-w-full h-auto max-h-64 mb-6"
+      {/* Create Shared List Dialog */}
+      <Dialog open={showSharedListModal} onOpenChange={setShowSharedListModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Users className="mr-2 h-5 w-5" />
+              Create Collaborative Task List
+            </DialogTitle>
+            <DialogDescription>
+              Create a shared task list that you can collaborate on with others in real-time.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="shared-list-name" className="text-sm font-medium">
+                List Name
+              </label>
+              <Input
+                id="shared-list-name"
+                value={newSharedListName}
+                onChange={(e) => setNewSharedListName(e.target.value)}
+                placeholder="Enter a name for your shared list"
               />
-              <h3 className="text-lg font-medium">No tasks found</h3>
-              <p className="text-muted-foreground">
-                {searchQuery || filter !== 'all' || projectFilter || priorityFilter || listFilter
-                  ? "Try adjusting your filters to see more tasks."
-                  : "Add a new task to get started."}
-              </p>
-              {!showForm && (
-                <CustomButton onClick={() => setShowForm(true)} className="mt-4">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Your First Task
-                </CustomButton>
-              )}
             </div>
           </div>
-        )}
-      </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSharedListModal(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateSharedList}
+              disabled={isCreatingSharedList || !newSharedListName.trim()}
+            >
+              {isCreatingSharedList ? 'Creating...' : 'Create Shared List'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };
