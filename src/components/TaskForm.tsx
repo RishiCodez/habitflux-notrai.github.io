@@ -8,6 +8,7 @@ interface TaskList {
   id: string;
   name: string;
   color: string;
+  isShared?: boolean;
 }
 
 interface TaskFormProps {
@@ -152,7 +153,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, lists, onSubmit, onCancel }) 
             <option value="">Select a list</option>
             {lists && lists.map((list) => (
               <option key={list.id} value={list.id}>
-                {list.name}
+                {list.name} {list.isShared ? '(Shared)' : ''}
               </option>
             ))}
           </select>

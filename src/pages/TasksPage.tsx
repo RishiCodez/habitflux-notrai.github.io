@@ -79,7 +79,6 @@ const TasksPage: React.FC = () => {
       setShowTour(true);
     }
     
-    // Check if accessing a shared list via URL
     const urlSharedListId = getSharedListIdFromUrl();
     if (urlSharedListId) {
       setSharedListId(urlSharedListId);
@@ -233,9 +232,19 @@ const TasksPage: React.FC = () => {
     setIsCreatingSharedList(true);
     
     try {
-      // Using a placeholder user ID until we add authentication
       const userId = 'user-' + Math.random().toString(36).substr(2, 9);
       const newSharedListId = await createSharedTaskList(newSharedListName, userId);
+      
+      const newList = {
+        id: newSharedListId,
+        name: newSharedListName,
+        color: 'bg-indigo-500',
+        isShared: true
+      };
+      
+      const updatedLists = [...taskLists, newList];
+      setTaskLists(updatedLists);
+      saveTaskLists(updatedLists);
       
       setSharedListId(newSharedListId);
       setShowSharedListModal(false);
@@ -259,7 +268,6 @@ const TasksPage: React.FC = () => {
   const handleBackToMyTasks = () => {
     setSharedListId(null);
     
-    // Remove the shared parameter from the URL
     const url = new URL(window.location.href);
     url.searchParams.delete('shared');
     window.history.replaceState({}, '', url.toString());
@@ -302,7 +310,6 @@ const TasksPage: React.FC = () => {
         <SharedTaskList sharedListId={sharedListId} />
       ) : (
         <>
-          {/* Lists Bar */}
           <div className="mb-6 glass-card p-3 rounded-lg overflow-x-auto" id="lists-bar">
             <div className="flex space-x-2 min-w-max">
               <button
@@ -490,7 +497,6 @@ const TasksPage: React.FC = () => {
         </>
       )}
       
-      {/* Create Shared List Dialog */}
       <Dialog open={showSharedListModal} onOpenChange={setShowSharedListModal}>
         <DialogContent>
           <DialogHeader>
