@@ -1,4 +1,3 @@
-
 import { initializeApp } from 'firebase/app';
 import { 
   getDatabase, 
@@ -20,7 +19,13 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  databaseURL: `https://${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseio.com`,
 };
+
+// Initialize Firebase only if we have the required configuration
+if (!firebaseConfig.projectId || !firebaseConfig.apiKey) {
+  console.warn('Firebase configuration is missing or incomplete. Real-time features will be disabled.');
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
