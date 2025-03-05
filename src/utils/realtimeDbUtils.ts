@@ -1,4 +1,3 @@
-
 import { 
   ref, 
   set, 
@@ -43,8 +42,17 @@ export const createSharedTaskList = async (name: string, createdBy: string) => {
     });
     
     return listId;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating shared task list:', error);
+    
+    // Enhanced error handling for permission issues
+    if (error.message && error.message.includes('PERMISSION_DENIED')) {
+      throw new Error(
+        'Permission denied. You need to update your Firebase Realtime Database security rules. ' +
+        'Go to the Firebase Console > Realtime Database > Rules and set rules to allow read/write access.'
+      );
+    }
+    
     throw error;
   }
 };
@@ -134,8 +142,16 @@ export const addCollaborator = async (listId: string, userId: string) => {
         }
       }, { onlyOnce: true });
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adding collaborator:', error);
+    
+    // Enhanced error handling for permission issues
+    if (error.message && error.message.includes('PERMISSION_DENIED')) {
+      throw new Error(
+        'Permission denied. You need to update your Firebase Realtime Database security rules.'
+      );
+    }
+    
     throw error;
   }
 };

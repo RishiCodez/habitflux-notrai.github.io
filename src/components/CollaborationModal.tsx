@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Copy, Link, Mail, Share2 } from 'lucide-react';
+import { Users, Copy, Link, Mail, Share2, AlertTriangle } from 'lucide-react';
 import { addCollaborator, generateShareableLink } from '../utils/realtimeDbUtils';
 
 interface CollaborationModalProps {
@@ -22,10 +22,15 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
 }) => {
   const [email, setEmail] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleAddCollaborator = async () => {
     if (!email.trim() || !sharedListId) return;
+    
+    setIsLoading(true);
+    setError(null);
     
     try {
       // In a real app, you'd send an invitation email here
@@ -38,12 +43,16 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
       });
       
       setEmail('');
-    } catch (error) {
+    } catch (error: any) {
+      setError(error.message || 'Failed to add collaborator');
+      
       toast({
         title: "Failed to add collaborator",
-        description: "There was an error adding the collaborator",
+        description: error.message || "There was an error adding the collaborator",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -75,6 +84,22 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
           </DialogDescription>
         </DialogHeader>
         
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md flex items-start space-x-2">
+            <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium">Error</p>
+              <p className="text-sm">{error}</p>
+              {error.includes('security rules') && (
+                <p className="text-sm mt-1">
+                  Go to your Firebase Console, navigate to Realtime Database, select the "Rules" tab,
+                  and update the rules to allow read/write access.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+        
         <div className="flex flex-col gap-4 py-4">
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">Add collaborators</h3>
@@ -85,8 +110,11 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
                 onChange={(e) => setEmail(e.target.value)}
                 className="flex-1"
               />
-              <Button onClick={handleAddCollaborator}>
-                Add
+              <Button 
+                onClick={handleAddCollaborator}
+                disabled={isLoading}
+              >
+                {isLoading ? "Adding..." : "Add"}
               </Button>
             </div>
           </div>
