@@ -1,6 +1,4 @@
-import { initializeApp } from 'firebase/app';
 import { 
-  getDatabase, 
   ref, 
   set, 
   onValue, 
@@ -10,29 +8,15 @@ import {
   off,
   DatabaseReference 
 } from 'firebase/database';
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  databaseURL: `https://${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseio.com`,
-};
-
-// Initialize Firebase only if we have the required configuration
-if (!firebaseConfig.projectId || !firebaseConfig.apiKey) {
-  console.warn('Firebase configuration is missing or incomplete. Real-time features will be disabled.');
-}
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+import { database } from './firebase';
 
 // Shared task list operations
 export const createSharedTaskList = async (name: string, createdBy: string) => {
+  if (!database) {
+    console.warn('Firebase database is not initialized. Operation failed.');
+    return null;
+  }
+  
   const listRef = ref(database, 'sharedLists');
   const newListRef = push(listRef);
   const listId = newListRef.key;
@@ -108,6 +92,11 @@ export const subscribeToSharedList = (
   listId: string, 
   callback: (data: any) => void
 ) => {
+  if (!database) {
+    console.warn('Firebase database is not initialized. Subscription failed.');
+    return null;
+  }
+  
   const listRef = ref(database, `sharedLists/${listId}`);
   onValue(listRef, (snapshot) => {
     const data = snapshot.val();

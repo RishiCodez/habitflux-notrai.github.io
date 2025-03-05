@@ -1,9 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
-  getAuth, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut, 
@@ -12,26 +10,9 @@ import {
   signInWithPopup,
   User as FirebaseUser
 } from 'firebase/auth';
-import { initializeApp } from 'firebase/app';
 import { saveFirstVisitComplete, checkFirstVisit } from '../utils/localStorageUtils';
+import { app, auth } from '../utils/firebase';
 
-// Firebase configuration using environment variables
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-// Initialize Firebase only if API key is available
-const app = import.meta.env.VITE_FIREBASE_API_KEY ? 
-  initializeApp(firebaseConfig) : 
-  null;
-
-// Initialize auth only if Firebase is initialized
-const auth = app ? getAuth(app) : null;
 const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('https://www.googleapis.com/auth/calendar');
 
@@ -73,7 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [firebaseInitialized, setFirebaseInitialized] = useState(!!app);
   const navigate = useNavigate();
 
-  // Check if user has Google Calendar connection
   const checkGoogleCalendarConnection = (user: FirebaseUser | null) => {
     if (user) {
       const googleCalendarConnected = user.providerData.some(
@@ -111,7 +91,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  // Login with email and password
   const login = async (email: string, password: string) => {
     if (!auth) {
       toast.error('Firebase not initialized. Check your environment variables.');
@@ -132,7 +111,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Sign up with email and password
   const signup = async (email: string, password: string) => {
     if (!auth) {
       toast.error('Firebase not initialized. Check your environment variables.');
@@ -153,7 +131,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Login with Google (which also gives us calendar access)
   const loginWithGoogle = async () => {
     if (!auth) {
       toast.error('Firebase not initialized. Check your environment variables.');
@@ -164,11 +141,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       const result = await signInWithPopup(auth, googleProvider);
       
-      // This gives you a Google Access Token for calendar API
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const token = credential?.accessToken;
       
-      // Store token for calendar API access
       if (token) {
         localStorage.setItem('googleCalendarToken', token);
         setIsGoogleCalendarConnected(true);
@@ -185,12 +160,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Login as guest
   const loginAsGuest = async () => {
     try {
       setLoading(true);
       
-      // Create a guest user
       const guestUser: User = {
         uid: `guest-${Date.now()}`,
         displayName: 'Guest',
@@ -200,12 +173,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(guestUser);
       localStorage.setItem('guestUser', JSON.stringify(guestUser));
       
-      // Check if this is their first visit to show the tour
       const isFirstVisit = checkFirstVisit();
       if (isFirstVisit) {
-        // We'll mark the visit in the tour completion
       } else {
-        saveFirstVisitComplete(); // In case they've visited before
+        saveFirstVisitComplete();
       }
       
       navigate('/dashboard');
@@ -220,7 +191,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Connect Google Calendar
   const connectGoogleCalendar = async () => {
     if (!auth) {
       toast.error('Firebase not initialized. Check your environment variables.');
@@ -230,13 +200,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // If user is not logged in, we need to sign in with Google
       if (!currentUser) {
         await loginWithGoogle();
         return;
       }
       
-      // If user is logged in but not with Google, we need to link Google account
       const provider = new GoogleAuthProvider();
       provider.addScope('https://www.googleapis.com/auth/calendar');
       
@@ -258,16 +226,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Logout
   const logout = async () => {
     try {
       setLoading(true);
       
       if (currentUser?.isGuest) {
-        // For guest users, just clear the localStorage
         localStorage.removeItem('guestUser');
       } else if (auth) {
-        // For authenticated users, sign out from Firebase
         await signOut(auth);
       }
       
@@ -285,7 +250,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Check for guest user in localStorage on initial load
   useEffect(() => {
     if (!currentUser && !loading) {
       const guestUserData = localStorage.getItem('guestUser');
