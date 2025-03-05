@@ -1,11 +1,10 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
-import { Send, User, Bot, Mic, MicOff, Volume2, VolumeX, Radio, ActivitySquare } from 'lucide-react';
+import { Send, User, Bot, Radio, ActivitySquare } from 'lucide-react';
 import CustomButton from '../components/CustomButton';
-import { useConversation } from '@11labs/react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
 interface Message {
@@ -26,80 +25,12 @@ const AssistantPage: React.FC = () => {
   ]);
   
   const [input, setInput] = useState('');
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('elevenLabsApiKey') || '');
-  const [agentId, setAgentId] = useState(() => localStorage.getItem('elevenLabsAgentId') || 'qfrPiYhFRt90nYpjvCue');
-  const [apiKeySet, setApiKeySet] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [connectionStarted, setConnectionStarted] = useState(false);
-  const [micPermissionGranted, setMicPermissionGranted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const conversation = useConversation({
-    onMessage: (message) => {
-      console.log("Message received:", message);
-      if (message.type === 'message' && message.role === 'assistant') {
-        const assistantMessage: Message = {
-          id: Date.now().toString(),
-          content: message.text || '',
-          sender: 'assistant',
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, assistantMessage]);
-      } else if (message.type === 'transcript' && message.is_final) {
-        console.log("Transcript received:", message.text);
-        const userMessage: Message = {
-          id: Date.now().toString(),
-          content: message.text || '',
-          sender: 'user',
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, userMessage]);
-      }
-    },
-    onConnect: () => {
-      console.log('Connected to ElevenLabs');
-      toast.success('Connected to ElevenLabs voice assistant');
-      setConnectionStarted(true);
-      setIsListening(true);
-    },
-    onDisconnect: () => {
-      console.log('Disconnected from ElevenLabs');
-      if (apiKeySet) {
-        toast.info('Disconnected from ElevenLabs voice assistant');
-      }
-      setConnectionStarted(false);
-      setIsListening(false);
-    },
-    onError: (error) => {
-      console.error('ElevenLabs error:', error);
-      toast.error('Error with voice assistant: ' + (error.message || 'Please try again.'));
-      setIsListening(false);
-    }
-  });
-  
-  const { isSpeaking, status } = conversation;
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-  
-  useEffect(() => {
-    const checkMicPermission = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        setMicPermissionGranted(true);
-        stream.getTracks().forEach(track => track.stop());
-      } catch (err) {
-        console.error('Microphone permission not granted:', err);
-        setMicPermissionGranted(false);
-      }
-    };
-    
-    checkMicPermission();
-  }, []);
   
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -112,21 +43,84 @@ const AssistantPage: React.FC = () => {
     };
     
     setMessages(prev => [...prev, userMessage]);
-    
-    if (status === 'connected') {
-      try {
-        setInput('');
-      } catch (error) {
-        console.error('Failed to send message to ElevenLabs:', error);
-        toast.error('Failed to send message to voice assistant');
-        
-        addFallbackResponse(input);
-      }
-    } else {
-      addFallbackResponse(input);
-    }
-    
     setInput('');
+    setIsLoading(true);
+    
+    try {
+      // Get response from Gemini
+      const response = await getGeminiResponse(input);
+      
+      const assistantMessage: Message = {
+        id: Date.now().toString(),
+        content: response,
+        sender: 'assistant',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Failed to get assistant response:', error);
+      toast.error('Failed to get assistant response. Please try again.');
+      
+      addFallbackResponse(input);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const getGeminiResponse = async (userInput: string): Promise<string> => {
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      
+      if (!apiKey) {
+        console.error('Gemini API key is not configured');
+        throw new Error('Gemini API key is not configured');
+      }
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: `As a productivity assistant, respond to: ${userInput}`
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Gemini API error:', errorData);
+        throw new Error(`Gemini API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Gemini response:', data);
+      
+      // Extract the text from the response
+      if (data.candidates && data.candidates[0]?.content?.parts && data.candidates[0].content.parts[0]?.text) {
+        return data.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error('Invalid response format from Gemini API');
+      }
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      throw error;
+    }
   };
   
   const addFallbackResponse = (userInput: string) => {
@@ -164,181 +158,16 @@ const AssistantPage: React.FC = () => {
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
-
-  const handleConnect = async () => {
-    if (!apiKey) {
-      toast.error('Please enter your ElevenLabs API key');
-      return;
-    }
-
-    if (!agentId) {
-      toast.error('Please enter your ElevenLabs Agent ID');
-      return;
-    }
-
-    try {
-      localStorage.setItem('elevenLabsApiKey', apiKey);
-      localStorage.setItem('elevenLabsAgentId', agentId);
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setMicPermissionGranted(true);
-      
-      window.localStorage.setItem('elevenlabs_api_key', apiKey);
-      
-      await conversation.startSession({
-        agentId: agentId,
-        overrides: {
-          tts: {
-            voiceId: 'EXAVITQu4vr4xnSDxMaL' // Sarah voice
-          }
-        }
-      });
-      
-      setApiKeySet(true);
-      console.log('Voice assistant connected and listening');
-      toast.success('Voice assistant connected! You can now speak or type.');
-    } catch (error) {
-      console.error('Failed to connect:', error);
-      toast.error('Failed to connect to ElevenLabs. Please check your API key and Agent ID.');
-    }
-  };
-
-  const handleDisconnect = async () => {
-    try {
-      await conversation.endSession();
-      setApiKeySet(false);
-      setIsListening(false);
-      toast.info('Voice assistant disconnected');
-    } catch (error) {
-      console.error('Failed to disconnect:', error);
-      toast.error('Failed to disconnect from voice assistant');
-    }
-  };
-  
-  const toggleMute = async () => {
-    try {
-      await conversation.setVolume({ volume: isMuted ? 1.0 : 0.0 });
-      setIsMuted(!isMuted);
-      toast.info(isMuted ? 'Assistant unmuted' : 'Assistant muted');
-    } catch (error) {
-      console.error('Failed to toggle mute:', error);
-      toast.error('Failed to change volume settings');
-    }
-  };
-
-  const toggleListening = () => {
-    if (!connectionStarted) {
-      toast.error('Please connect to the voice assistant first');
-      return;
-    }
-    
-    const newListeningState = !isListening;
-    setIsListening(newListeningState);
-    
-    toast.info(newListeningState ? 'Microphone enabled' : 'Microphone disabled');
-    
-    console.log('Listening state toggled:', newListeningState);
-  };
-
-  useEffect(() => {
-    const savedApiKey = localStorage.getItem('elevenLabsApiKey');
-    const savedAgentId = localStorage.getItem('elevenLabsAgentId');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-    }
-    if (savedAgentId) {
-      setAgentId(savedAgentId);
-    }
-  }, []);
   
   return (
     <AppLayout>
       <div className="flex flex-col h-[calc(100vh-8rem)]">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">AI Voice Assistant</h1>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">AI Assistant</h1>
           
-          {!apiKeySet && (
-            <div className="flex gap-2 items-center">
-              <div className="flex flex-col gap-2">
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Enter ElevenLabs API Key"
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                />
-                <input
-                  type="text"
-                  value={agentId}
-                  onChange={(e) => setAgentId(e.target.value)}
-                  placeholder="Enter ElevenLabs Agent ID"
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                />
-              </div>
-              <Button 
-                onClick={handleConnect} 
-                size="sm"
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 h-full"
-              >
-                <Mic className="mr-2 h-4 w-4" />
-                Connect Voice
-              </Button>
-            </div>
-          )}
-          
-          {apiKeySet && (
-            <div className="flex items-center gap-2">
-              <div className="text-sm mr-2 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-md">
-                <span className="font-medium">Agent ID:</span> {agentId.substring(0, 10)}...
-              </div>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={toggleMute} 
-                      variant="outline" 
-                      size="sm"
-                      className="h-9 w-9 p-0"
-                    >
-                      {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {isMuted ? 'Unmute' : 'Mute'}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={toggleListening} 
-                      variant={isListening ? "default" : "secondary"}
-                      size="sm"
-                      className={`h-9 w-9 p-0 ${isListening ? 'bg-green-500 hover:bg-green-600' : ''}`}
-                    >
-                      {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {isListening ? 'Disable Microphone' : 'Enable Microphone'}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <Button 
-                onClick={handleDisconnect} 
-                variant="secondary" 
-                size="sm"
-                className="flex items-center"
-              >
-                <MicOff className="mr-2 h-4 w-4" />
-                Disconnect Voice
-              </Button>
-            </div>
-          )}
+          <div className="text-sm mr-2 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-md">
+            Powered by Gemini
+          </div>
         </div>
         
         <div className="flex-1 rounded-xl overflow-hidden flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900/80 dark:via-indigo-950/40 dark:to-purple-950/30 border border-indigo-100 dark:border-indigo-900/40 shadow-lg">
@@ -386,45 +215,24 @@ const AssistantPage: React.FC = () => {
           </div>
           
           <div className="py-2 px-4 bg-primary/5 border-t border-primary/10 flex justify-between items-center text-sm">
-            {isListening && status === 'connected' && (
-              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                <span className="inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span>Listening...</span>
-              </div>
-            )}
-            
-            {isSpeaking && status === 'connected' && (
+            {isLoading && (
               <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                <span className="inline-block h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>
-                <span>Speaking...</span>
+                <span className="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                <span>Thinking...</span>
               </div>
             )}
             
-            {status === 'connected' && !isListening && !isSpeaking && (
+            {!isLoading && (
               <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                <span className="inline-block h-2 w-2 rounded-full bg-gray-500"></span>
-                <span>Idle</span>
+                <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
+                <span>Ready</span>
               </div>
             )}
             
-            {!micPermissionGranted && (
-              <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                <span className="inline-block h-2 w-2 rounded-full bg-red-500"></span>
-                <span>Microphone access needed</span>
-              </div>
-            )}
-            
-            {status === 'connected' ? (
-              <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                <span className="h-2 w-2 bg-green-500 rounded-full"></span>
-                Voice connected
-              </span>
-            ) : (
-              <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                <span className="h-2 w-2 bg-gray-500 rounded-full"></span>
-                Voice disconnected
-              </span>
-            )}
+            <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+              <span className="h-2 w-2 bg-green-500 rounded-full"></span>
+              Gemini connected
+            </span>
           </div>
           
           <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
@@ -433,13 +241,14 @@ const AssistantPage: React.FC = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type your message or speak..."
+                placeholder="Type your message..."
                 className="flex-1 h-12 max-h-32 px-4 py-2 border border-indigo-100 dark:border-indigo-800 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400/50 resize-none bg-white dark:bg-gray-800 dark:text-white shadow-sm"
                 rows={1}
+                disabled={isLoading}
               />
               <Button 
                 onClick={handleSendMessage} 
-                disabled={!input.trim()}
+                disabled={!input.trim() || isLoading}
                 className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 h-12 w-12 p-0"
               >
                 <Send className="h-5 w-5" />
@@ -447,19 +256,11 @@ const AssistantPage: React.FC = () => {
             </div>
             <div className="flex justify-between mt-2">
               <p className="text-xs text-muted-foreground">
-                {status === 'connected' ? 
-                  isListening ? 'Speak or type and press Enter to send' : 'Type and press Enter to send' :
-                  'Press Enter to send, Shift+Enter for new line'}
+                Type and press Enter to send, Shift+Enter for new line
               </p>
-              {micPermissionGranted ? (
-                status === 'connected' && (
-                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                    <span className="h-2 w-2 bg-green-500 rounded-full"></span> Voice connected
-                  </p>
-                )
-              ) : (
+              {!import.meta.env.VITE_GEMINI_API_KEY && (
                 <p className="text-xs text-red-500 flex items-center gap-1">
-                  <span className="h-2 w-2 bg-red-500 rounded-full"></span> Microphone access needed
+                  <span className="h-2 w-2 bg-red-500 rounded-full"></span> Gemini API key not configured
                 </p>
               )}
             </div>
