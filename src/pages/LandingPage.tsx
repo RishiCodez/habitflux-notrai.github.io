@@ -1,7 +1,8 @@
+
 import { useNavigate } from 'react-router-dom';
 import CustomButton from '@/components/CustomButton';
 import { 
-  ClipboardCheck, Clock, Calendar, Brain, ChevronRight, 
+  ClipboardCheck, Clock, Share2, ChevronRight, 
   Star, Target, Layout, Sparkles, RefreshCw, LogIn, UserPlus
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,12 +27,12 @@ const LandingPage = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-accent">
       {/* Header */}
       <header className="container mx-auto py-6 px-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Selflo</h1>
+        <h1 className="text-2xl font-bold">selflo.app</h1>
         <nav className="flex items-center space-x-4">
           <ul className="hidden md:flex space-x-8 mr-6">
             <li><a href="#features" className="text-foreground/80 hover:text-foreground transition-colors">Features</a></li>
-            <li><a href="#how-it-works" className="text-foreground/80 hover:text-foreground transition-colors">How It Works</a></li>
             <li><a href="#testimonials" className="text-foreground/80 hover:text-foreground transition-colors">Testimonials</a></li>
+            <li><a href="#pricing" className="text-foreground/80 hover:text-foreground transition-colors">Pricing</a></li>
           </ul>
           
           {currentUser ? (
@@ -58,7 +59,7 @@ const LandingPage = () => {
                 className="flex items-center"
               >
                 <UserPlus className="mr-2 h-4 w-4" />
-                Sign Up
+                Get Started
               </CustomButton>
             </div>
           )}
@@ -71,10 +72,13 @@ const LandingPage = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-12">
             <div className="md:w-1/2 space-y-6 text-left animate-fade-up">
               <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-                Your Personal Productivity & Learning Assistant
+                Transform Your Productivity
               </h1>
+              <h2 className="text-2xl md:text-3xl font-medium text-primary">
+                Set Goals. Track Progress. Achieve More.
+              </h2>
               <p className="text-xl text-foreground/80 max-w-lg">
-                Plan your day, focus on tasks, and reflect on your progress with AI-powered assistance.
+                selflo.app helps you break down your goals into actionable steps, track your progress, and stay motivated throughout your journey.
               </p>
               <div className="pt-4 flex space-x-4">
                 <CustomButton 
@@ -83,19 +87,12 @@ const LandingPage = () => {
                 >
                   Get Started
                 </CustomButton>
-                <CustomButton 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => document.getElementById('features')?.scrollIntoView({behavior: 'smooth'})}
-                >
-                  Learn More <ChevronRight className="ml-2 h-4 w-4" />
-                </CustomButton>
               </div>
             </div>
 
             <div className="md:w-5/12 w-full max-w-md glass-card rounded-xl p-6 animate-fade-up animation-delay-200">
               <div className="space-y-4 text-center">
-                <h2 className="text-2xl font-bold">Welcome to Selflo!</h2>
+                <h2 className="text-2xl font-bold">Welcome to selflo.app!</h2>
                 {currentUser ? (
                   <>
                     <p className="text-muted-foreground">
@@ -155,11 +152,11 @@ const LandingPage = () => {
 
       {/* Features Section */}
       <section id="features" className="features-section bg-accent/30">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 py-20">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Powerful Features</h2>
             <p className="text-xl text-muted-foreground max-w-xl mx-auto">
-              Everything you need to boost your productivity and maintain your focus
+              Everything you need to stay organized and achieve your goals.
             </p>
           </div>
           
@@ -168,9 +165,9 @@ const LandingPage = () => {
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <ClipboardCheck className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Task Management</h3>
+              <h3 className="text-xl font-semibold mb-2">📃 Lists</h3>
               <p className="text-foreground/70">
-                Create and organize tasks with custom lists, priorities, and due dates. Filter and sort to focus on what matters most.
+                Organize and separate your lists effortlessly.
               </p>
             </div>
             
@@ -178,94 +175,46 @@ const LandingPage = () => {
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <Clock className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Pomodoro Timer</h3>
+              <h3 className="text-xl font-semibold mb-2">⏳ Pomodoro Timer</h3>
               <p className="text-foreground/70">
-                Enhance your focus with customizable Pomodoro sessions. Track your focus time and build productive habits.
+                Set Pomodoro Timers for non-stop, distraction free work.
               </p>
             </div>
             
             <div className="glass-card p-6 rounded-lg animate-fade-up animation-delay-300 feature-card">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Calendar className="h-6 w-6 text-primary" />
+                <Share2 className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Daily Planner</h3>
+              <h3 className="text-xl font-semibold mb-2">🌐 Shareable todos</h3>
               <p className="text-foreground/70">
-                Plan your day efficiently with an interactive daily schedule. Add, edit, and remove events with ease.
-              </p>
-            </div>
-            
-            <div className="glass-card p-6 rounded-lg animate-fade-up animation-delay-400 feature-card">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Brain className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Daily Reflection</h3>
-              <p className="text-foreground/70">
-                Build self-awareness through guided daily reflections. Track your progress and identify areas for improvement.
-              </p>
-            </div>
-            
-            <div className="glass-card p-6 rounded-lg animate-fade-up animation-delay-500 feature-card">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Target className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Focus Tracking</h3>
-              <p className="text-foreground/70">
-                Monitor your focus sessions and productivity trends. Set goals and celebrate your progress.
-              </p>
-            </div>
-            
-            <div className="glass-card p-6 rounded-lg animate-fade-up animation-delay-600 feature-card">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Layout className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Customizable Dashboard</h3>
-              <p className="text-foreground/70">
-                View all your important information at a glance with a personalized dashboard experience.
+                Share todo's with your friends seamlessly via X, Whatsapp and more.
               </p>
             </div>
           </div>
         </div>
       </section>
       
-      {/* How It Works Section */}
-      <section id="how-it-works" className="py-20">
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple Pricing (Coming soon)</h2>
             <p className="text-xl text-muted-foreground max-w-xl mx-auto">
-              Simple steps to boost your productivity
+              Choose the plan that fits your needs
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-10 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 mx-auto">
-                <ClipboardCheck className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">1. Plan Your Day</h3>
-              <p className="text-foreground/70">
-                Use the Daily Planner and Task Manager to organize your day efficiently
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 mx-auto">
-                <Clock className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">2. Focus With Pomodoro</h3>
-              <p className="text-foreground/70">
-                Use the Pomodoro timer to maintain focus and track your productive time
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 mx-auto">
-                <RefreshCw className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">3. Reflect & Improve</h3>
-              <p className="text-foreground/70">
-                Complete daily reflections to learn from your experiences and improve
-              </p>
+          <div className="max-w-md mx-auto">
+            <div className="glass-card p-8 rounded-lg text-center">
+              <h3 className="text-2xl font-bold mb-2">Basic</h3>
+              <p className="text-3xl font-bold mb-4">Free/forever</p>
+              
+              <CustomButton 
+                onClick={handleGetStarted}
+                className="w-full mt-4"
+              >
+                Get Started
+              </CustomButton>
             </div>
           </div>
         </div>
@@ -273,11 +222,11 @@ const LandingPage = () => {
 
       {/* Testimonials Section */}
       <section id="testimonials" className="testimonials-section bg-accent/30">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 py-20">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Users Say</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Regular Users Say</h2>
             <p className="text-xl text-muted-foreground max-w-xl mx-auto">
-              Join thousands of satisfied users who have transformed their productivity
+              Join hundreds of satisfied users achieving their goals
             </p>
           </div>
           
@@ -291,15 +240,15 @@ const LandingPage = () => {
                 </div>
               </div>
               <p className="mb-4 text-foreground/90">
-                "Selflo has completely transformed how I manage my day. The combination of task management and focus tools helps me stay on track."
+                "selflo.app has completely transformed how I approach my goals. The visual tracking keeps me motivated!"
               </p>
               <div className="flex items-center">
                 <div className="bg-primary/10 h-10 w-10 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-primary font-semibold">JD</span>
+                  <span className="text-primary font-semibold">SJ</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold">Jane Doe</h4>
-                  <p className="text-sm text-muted-foreground">Marketing Manager</p>
+                  <h4 className="font-semibold">Sarah Johnson</h4>
+                  <p className="text-sm text-muted-foreground">Entrepreneur</p>
                 </div>
               </div>
             </div>
@@ -313,15 +262,15 @@ const LandingPage = () => {
                 </div>
               </div>
               <p className="mb-4 text-foreground/90">
-                "The daily reflection feature has been eye-opening for me. I've become much more aware of my productivity patterns and have made real improvements."
+                "I like Selflo.app and it's features, such a powerful tool!"
               </p>
               <div className="flex items-center">
                 <div className="bg-primary/10 h-10 w-10 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-primary font-semibold">JS</span>
+                  <span className="text-primary font-semibold">MB</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold">John Smith</h4>
-                  <p className="text-sm text-muted-foreground">Software Developer</p>
+                  <h4 className="font-semibold">Mboya</h4>
+                  <p className="text-sm text-muted-foreground">Developer</p>
                 </div>
               </div>
             </div>
@@ -335,15 +284,15 @@ const LandingPage = () => {
                 </div>
               </div>
               <p className="mb-4 text-foreground/90">
-                "I love the simplicity and effectiveness of Selflo. The Pomodoro timer has helped me overcome procrastination and focus on what matters."
+                "Selflo has made learning and task management so much simpler. It helps me stay organized without any hassle."
               </p>
               <div className="flex items-center">
                 <div className="bg-primary/10 h-10 w-10 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-primary font-semibold">AJ</span>
+                  <span className="text-primary font-semibold">PR</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold">Alex Johnson</h4>
-                  <p className="text-sm text-muted-foreground">Graduate Student</p>
+                  <h4 className="font-semibold">Priyanka</h4>
+                  <p className="text-sm text-muted-foreground">Educator</p>
                 </div>
               </div>
             </div>
@@ -355,10 +304,20 @@ const LandingPage = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="glass-card p-8 md:p-12 rounded-xl text-center max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Boost Your Productivity?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">selflo.app</h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Start using Selflo today and take control of your time and focus.
+              Your personal goal achievement companion.
             </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-8 mb-8">
+              <div className="text-center">
+                <h3 className="font-semibold text-lg mb-2">Product</h3>
+                <ul className="space-y-2">
+                  <li><a href="#features" className="text-foreground/70 hover:text-foreground">Features</a></li>
+                  <li><a href="#pricing" className="text-foreground/70 hover:text-foreground">Pricing</a></li>
+                  <li><a href="#" className="text-foreground/70 hover:text-foreground">How it works</a></li>
+                </ul>
+              </div>
+            </div>
             {currentUser ? (
               <CustomButton 
                 size="lg" 
@@ -368,23 +327,13 @@ const LandingPage = () => {
                 Go to Dashboard <ChevronRight className="ml-2 h-5 w-5" />
               </CustomButton>
             ) : (
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <CustomButton 
-                  size="lg" 
-                  onClick={handleSignup}
-                  className="px-8"
-                >
-                  Sign Up Now <UserPlus className="ml-2 h-5 w-5" />
-                </CustomButton>
-                <CustomButton 
-                  size="lg" 
-                  variant="outline"
-                  onClick={handleLogin}
-                  className="px-8"
-                >
-                  Sign In <LogIn className="ml-2 h-5 w-5" />
-                </CustomButton>
-              </div>
+              <CustomButton 
+                size="lg" 
+                onClick={handleSignup}
+                className="px-8"
+              >
+                Get Started <ChevronRight className="ml-2 h-5 w-5" />
+              </CustomButton>
             )}
           </div>
         </div>
@@ -393,7 +342,7 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="py-8 border-t">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-foreground/60">© {new Date().getFullYear()} Selflo. All rights reserved.</p>
+          <p className="text-foreground/60">© 2025 Selflo.app. All rights reserved.</p>
         </div>
       </footer>
     </div>
