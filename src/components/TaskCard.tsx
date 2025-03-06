@@ -52,7 +52,29 @@ const TaskCard: React.FC<TaskCardProps> = ({
     high: "High"
   };
   
-  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !task.completed;
+  // Helper function to safely format a date using date-fns
+  const safeFormatDate = (dateStr?: string) => {
+    if (!dateStr) return null;
+    
+    try {
+      const date = new Date(dateStr);
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return null;
+      }
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return null;
+    }
+  };
+  
+  const createdAtFormatted = safeFormatDate(task.createdAt);
+  const dueDateFormatted = safeFormatDate(task.dueDate);
+  
+  const isOverdue = task.dueDate ? 
+    !task.completed && new Date(task.dueDate) < new Date() && !isNaN(new Date(task.dueDate).getTime()) : 
+    false;
   
   return (
     <div className={cn(
@@ -140,10 +162,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </div>
           
           <div className="mt-3 flex items-center text-xs text-muted-foreground">
-            <Clock className="h-3 w-3 mr-1" />
-            <span>Created {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}</span>
+            {createdAtFormatted && (
+              <>
+                <Clock className="h-3 w-3 mr-1" />
+                <span>Created {createdAtFormatted}</span>
+              </>
+            )}
             
-            {task.dueDate && (
+            {dueDateFormatted && (
               <span className="ml-2 flex items-center">
                 •
                 <span className={cn(
@@ -151,7 +177,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   isOverdue ? "text-destructive" : ""
                 )}>
                   {isOverdue && <AlertCircle className="h-3 w-3 mr-1" />}
-                  Due {formatDistanceToNow(new Date(task.dueDate), { addSuffix: true })}
+                  Due {dueDateFormatted}
                 </span>
               </span>
             )}
