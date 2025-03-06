@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Mail, Lock, Calendar, AlertCircle, User } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Calendar, AlertCircle } from 'lucide-react';
 import CustomButton from '../components/CustomButton';
 
 const SignupPage: React.FC = () => {
@@ -12,7 +12,7 @@ const SignupPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const { signup, loginWithGoogle, loginAsGuest, loading, firebaseInitialized } = useAuth();
+  const { signup, loginWithGoogle, loading, firebaseInitialized } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,15 +48,6 @@ const SignupPage: React.FC = () => {
       // Success toast is shown in the loginWithGoogle function
     } catch (error) {
       // Error handling is done in the loginWithGoogle function
-    }
-  };
-
-  const handleGuestLogin = async () => {
-    try {
-      await loginAsGuest();
-      // Success toast is shown in the loginAsGuest function
-    } catch (error) {
-      // Error handling is done in the loginAsGuest function
     }
   };
 
@@ -162,7 +153,7 @@ const SignupPage: React.FC = () => {
                 <div className="border-t w-full border-gray-300 dark:border-gray-700"></div>
               </div>
               
-              <div className="mt-4 space-y-3">
+              <div className="mt-4">
                 <CustomButton
                   type="button"
                   onClick={handleGoogleSignup}
@@ -173,38 +164,15 @@ const SignupPage: React.FC = () => {
                   <Calendar className="h-5 w-5 text-primary" />
                   Google (with Calendar)
                 </CustomButton>
-                
-                <CustomButton
-                  type="button"
-                  onClick={handleGuestLogin}
-                  variant="ghost"
-                  className="w-full flex items-center justify-center gap-2"
-                  disabled={loading}
-                >
-                  <User className="h-5 w-5" />
-                  Continue as Guest
-                </CustomButton>
               </div>
             </div>
           </>
         ) : (
-          <div className="space-y-6">
-            <div className="p-4 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded-md">
-              <h3 className="font-medium mb-2">Firebase Not Configured</h3>
-              <p className="text-sm">
-                To use authentication, you need to add your Firebase configuration to the .env file.
-              </p>
-            </div>
-            
-            <CustomButton
-              type="button"
-              onClick={handleGuestLogin}
-              className="w-full flex items-center justify-center gap-2"
-              disabled={loading}
-            >
-              <User className="h-5 w-5" />
-              Continue as Guest
-            </CustomButton>
+          <div className="p-4 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded-md">
+            <h3 className="font-medium mb-2">Firebase Not Configured</h3>
+            <p className="text-sm">
+              To use authentication, you need to add your Firebase configuration to the .env file.
+            </p>
           </div>
         )}
         

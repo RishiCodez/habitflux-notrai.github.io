@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -10,7 +11,7 @@ import {
   signInWithPopup,
   User as FirebaseUser
 } from 'firebase/auth';
-import { saveFirstVisitComplete, checkFirstVisit } from '../utils/localStorageUtils';
+import { checkFirstVisit } from '../utils/localStorageUtils';
 import { app, auth } from '../utils/firebase';
 
 const googleProvider = new GoogleAuthProvider();
@@ -21,7 +22,6 @@ interface User {
   email?: string;
   uid: string;
   photoURL?: string;
-  isGuest?: boolean;
 }
 
 interface AuthContextType {
@@ -30,7 +30,6 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   firebaseInitialized: boolean;
   isGoogleCalendarConnected: boolean;
@@ -160,37 +159,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginAsGuest = async () => {
-    try {
-      setLoading(true);
-      
-      const guestUser: User = {
-        uid: `guest-${Date.now()}`,
-        displayName: 'Guest',
-        isGuest: true
-      };
-      
-      setCurrentUser(guestUser);
-      localStorage.setItem('guestUser', JSON.stringify(guestUser));
-      
-      const isFirstVisit = checkFirstVisit();
-      if (isFirstVisit) {
-      } else {
-        saveFirstVisitComplete();
-      }
-      
-      navigate('/dashboard');
-      toast.success('Logged in as guest successfully! Explore the app and enjoy.');
-      
-    } catch (error) {
-      console.error('Guest login failed:', error);
-      toast.error('Guest login failed. Please try again.');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const connectGoogleCalendar = async () => {
     if (!auth) {
       toast.error('Firebase not initialized. Check your environment variables.');
@@ -230,9 +198,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      if (currentUser?.isGuest) {
-        localStorage.removeItem('guestUser');
-      } else if (auth) {
+      if (auth) {
         await signOut(auth);
       }
       
@@ -250,28 +216,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  useEffect(() => {
-    if (!currentUser && !loading) {
-      const guestUserData = localStorage.getItem('guestUser');
-      if (guestUserData) {
-        try {
-          const guestUser = JSON.parse(guestUserData);
-          setCurrentUser(guestUser);
-        } catch (error) {
-          console.error('Error parsing guest user data:', error);
-          localStorage.removeItem('guestUser');
-        }
-      }
-    }
-  }, [loading]);
-
   const value = {
     currentUser,
     loading,
     login,
     signup,
     loginWithGoogle,
-    loginAsGuest,
     logout,
     firebaseInitialized,
     isGoogleCalendarConnected,

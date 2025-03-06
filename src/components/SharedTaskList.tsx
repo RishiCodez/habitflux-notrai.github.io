@@ -1,14 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Share2, RefreshCw, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TaskCard, { Task } from './TaskCard';
 import TaskForm from './TaskForm';
 import CollaborationModal from './CollaborationModal';
+import ShareOptions from './ShareOptions';
 import { 
-  subscribeToSharedList, 
-  unsubscribeFromSharedList,
   addTaskToSharedList,
   updateSharedTask,
   deleteSharedTask,
@@ -17,6 +16,8 @@ import {
   checkListAccess
 } from '../utils/realtimeDbUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ref, onValue, off } from 'firebase/database';
+import { database } from '../utils/firebase';
 
 interface SharedTaskListProps {
   sharedListId: string;
@@ -32,7 +33,7 @@ interface AccessStatus {
 
 const SharedTaskList: React.FC<SharedTaskListProps> = ({ 
   sharedListId,
-  currentUserEmail = 'demo@example.com' // For demo purposes
+  currentUserEmail = 'user@example.com' // For demo purposes
 }) => {
   const [sharedList, setSharedList] = useState<any>(null);
   const [sharedTasks, setSharedTasks] = useState<Task[]>([]);
@@ -41,8 +42,39 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [showCollaborationModal, setShowCollaborationModal] = useState(false);
   const [accessStatus, setAccessStatus] = useState<AccessStatus | null>(null);
+  const [showShareOptions, setShowShareOptions] = useState(false);
   
+  const listRef = useRef<any>(null);
   const { toast } = useToast();
+
+  // Function to subscribe to shared list updates
+  const subscribeToSharedList = (listId: string, callback: (data: any) => void) => {
+    try {
+      if (!database) {
+        console.error('Firebase database is not initialized');
+        return null;
+      }
+      
+      const dbRef = ref(database, `sharedLists/${listId}`);
+      
+      onValue(dbRef, (snapshot) => {
+        const data = snapshot.val();
+        callback(data);
+      });
+      
+      return dbRef;
+    } catch (error) {
+      console.error('Error subscribing to shared list:', error);
+      return null;
+    }
+  };
+
+  // Function to unsubscribe from shared list updates
+  const unsubscribeFromSharedList = (listRef: any) => {
+    if (listRef) {
+      off(listRef);
+    }
+  };
 
   useEffect(() => {
     if (!sharedListId) return;
@@ -58,7 +90,7 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
         }
         
         // If user has access, load the list data
-        const listRef = subscribeToSharedList(sharedListId, (data) => {
+        const dbRef = subscribeToSharedList(sharedListId, (data) => {
           if (data) {
             setSharedList(data);
             
@@ -83,9 +115,11 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
           setIsLoading(false);
         });
         
+        listRef.current = dbRef;
+        
         return () => {
           // Clean up subscription
-          unsubscribeFromSharedList(listRef);
+          unsubscribeFromSharedList(listRef.current);
         };
       } catch (error) {
         toast({
@@ -98,6 +132,12 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
     };
     
     checkAccess();
+    
+    return () => {
+      if (listRef.current) {
+        unsubscribeFromSharedList(listRef.current);
+      }
+    };
   }, [sharedListId, currentUserEmail, toast]);
 
   const handleAddTask = async (task: Task) => {
@@ -258,6 +298,10 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
     const accessResult = await checkListAccess(sharedListId, currentUserEmail);
     setAccessStatus(accessResult as AccessStatus);
   };
+  
+  const handleShareClick = () => {
+    setShowShareOptions(true);
+  };
 
   if (isLoading) {
     return (
@@ -360,10 +404,16 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
           </p>
         </div>
         
-        <Button onClick={() => setShowCollaborationModal(true)}>
-          <Share2 className="mr-2 h-4 w-4" />
-          Share
-        </Button>
+        <div className="flex space-x-2">
+          <Button onClick={handleShareClick}>
+            <Share2 className="mr-2 h-4 w-4" />
+            Share
+          </Button>
+          <Button onClick={() => setShowCollaborationModal(true)} variant="outline">
+            <Users className="mr-2 h-4 w-4" />
+            Invite
+          </Button>
+        </div>
       </div>
       
       {showForm && (
@@ -429,6 +479,15 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
         sharedListName={sharedList.name}
         listData={sharedList}
         onDataUpdate={handleDataUpdate}
+      />
+      
+      <ShareOptions
+        isOpen={showShareOptions}
+        onClose={() => setShowShareOptions(false)}
+        taskList={sharedTasks}
+        isSharedList={true}
+        sharedListLink={window.location.href}
+        listName={sharedList.name}
       />
     </div>
   );

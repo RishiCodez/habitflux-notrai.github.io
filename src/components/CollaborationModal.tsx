@@ -4,13 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Copy, Link, Mail, Share2, AlertTriangle, Globe, Lock } from 'lucide-react';
+import { Users, Copy, AlertTriangle, Globe, Lock } from 'lucide-react';
 import { 
   addCollaborator, 
   generateShareableLink, 
   updateListAccessType 
 } from '../utils/realtimeDbUtils';
-import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 

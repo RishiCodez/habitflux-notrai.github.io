@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Plus, Search, ListFilter, FolderPlus, CheckSquare, Users, Share2 } from 'lucide-react';
@@ -7,6 +8,7 @@ import TaskForm from '../components/TaskForm';
 import CustomButton from '../components/CustomButton';
 import SharedTaskList from '../components/SharedTaskList';
 import InvitationsList from '../components/InvitationsList';
+import ShareOptions from '../components/ShareOptions';
 import { useToast } from '@/hooks/use-toast';
 import { 
   saveTasks, 
@@ -18,8 +20,7 @@ import {
 } from '../utils/localStorageUtils';
 import { 
   createSharedTaskList, 
-  getSharedListIdFromUrl,
-  getInvitationsForUser
+  getSharedListIdFromUrl
 } from '../utils/realtimeDbUtils';
 import TourGuide from '../components/TourGuide';
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,8 @@ const defaultLists: TaskList[] = [
   { id: 'shopping', name: 'Shopping', color: 'bg-green-500' }
 ];
 
-const currentUserEmail = 'demo@example.com';
+// Use the current user's email from the auth context if available
+const currentUserEmail = 'user@example.com';
 
 const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -59,7 +61,7 @@ const TasksPage: React.FC = () => {
   const [newSharedListName, setNewSharedListName] = useState('');
   const [sharedListId, setSharedListId] = useState<string | null>(null);
   const [isCreatingSharedList, setIsCreatingSharedList] = useState(false);
-  const [hasInvitations, setHasInvitations] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
   
   const { toast } = useToast();
 
@@ -88,13 +90,6 @@ const TasksPage: React.FC = () => {
     const urlSharedListId = getSharedListIdFromUrl();
     if (urlSharedListId) {
       setSharedListId(urlSharedListId);
-    }
-    
-    try {
-      const invitations = await getInvitationsForUser(currentUserEmail);
-      setHasInvitations(Array.isArray(invitations) && invitations.length > 0);
-    } catch (error) {
-      console.error("Failed to check invitations:", error);
     }
   }, []);
 
@@ -266,6 +261,11 @@ const TasksPage: React.FC = () => {
       setSharedListId(newSharedListId);
       setShowSharedListModal(false);
       
+      // Update URL with shared list ID
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('shared', newSharedListId);
+      window.history.pushState({}, '', newUrl.toString());
+      
       toast({
         title: "Shared list created",
         description: `"${newSharedListName}" collaborative list has been created.`
@@ -292,15 +292,15 @@ const TasksPage: React.FC = () => {
   
   const handleAcceptInvitation = (listId: string) => {
     setSharedListId(listId);
+    
+    // Update URL with shared list ID
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('shared', listId);
+    window.history.pushState({}, '', newUrl.toString());
   };
   
-  const handleRefreshInvitations = async () => {
-    try {
-      const invitations = await getInvitationsForUser(currentUserEmail);
-      setHasInvitations(Array.isArray(invitations) && invitations.length > 0);
-    } catch (error) {
-      console.error("Failed to refresh invitations:", error);
-    }
+  const handleShareCurrentList = () => {
+    setShowShareOptions(true);
   };
   
   return (
@@ -314,11 +314,21 @@ const TasksPage: React.FC = () => {
         
         <div className="flex space-x-2">
           {sharedListId ? (
-            <CustomButton onClick={handleBackToMyTasks} variant="outline">
-              Back to My Tasks
-            </CustomButton>
+            <>
+              <CustomButton onClick={handleBackToMyTasks} variant="outline">
+                Back to My Tasks
+              </CustomButton>
+              <CustomButton onClick={handleShareCurrentList} variant="outline">
+                <Share2 className="mr-2 h-4 w-4" />
+                Share
+              </CustomButton>
+            </>
           ) : (
             <>
+              <CustomButton onClick={handleShareCurrentList} variant="outline">
+                <Share2 className="mr-2 h-4 w-4" />
+                Share
+              </CustomButton>
               <CustomButton onClick={() => setShowSharedListModal(true)} variant="outline">
                 <Users className="mr-2 h-4 w-4" />
                 New Shared List
@@ -335,15 +345,6 @@ const TasksPage: React.FC = () => {
           )}
         </div>
       </div>
-      
-      {!sharedListId && hasInvitations && (
-        <div className="mb-6">
-          <InvitationsList 
-            userEmail={currentUserEmail} 
-            onAccept={handleAcceptInvitation}
-          />
-        </div>
-      )}
       
       {sharedListId ? (
         <SharedTaskList sharedListId={sharedListId} currentUserEmail={currentUserEmail} />
@@ -575,6 +576,15 @@ const TasksPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <ShareOptions
+        isOpen={showShareOptions}
+        onClose={() => setShowShareOptions(false)}
+        taskList={filteredTasks}
+        isSharedList={!!sharedListId}
+        sharedListLink={sharedListId ? window.location.href : undefined}
+        listName={listFilter ? taskLists.find(list => list.id === listFilter)?.name || "My Tasks" : "My Tasks"}
+      />
     </AppLayout>
   );
 };

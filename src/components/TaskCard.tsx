@@ -1,159 +1,176 @@
 
-import React from 'react';
-import { Pencil, Trash2, CheckCircle, Circle } from 'lucide-react';
+import React, { useState } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Check, Clock, Edit2, Trash2, AlertCircle, MessageSquare, ArrowUpRight, Share2 } from 'lucide-react';
+import ShareOptions from './ShareOptions';
 
 export interface Task {
   id: string;
   title: string;
   description?: string;
+  dueDate?: string;
   completed: boolean;
   priority: 'low' | 'medium' | 'high';
-  dueDate?: string;
+  createdAt: string;
   project?: string;
   listId?: string;
+  sharedId?: string;
 }
 
 interface TaskCardProps {
   task: Task;
-  lists?: { id: string; name: string; color: string; isShared?: boolean }[];
   onComplete?: (id: string) => void;
   onDelete?: (id: string) => void;
   onEdit?: (task: Task) => void;
+  lists?: { id: string; name: string; color: string }[];
   readOnly?: boolean;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ 
   task, 
-  lists, 
   onComplete, 
   onDelete, 
   onEdit,
+  lists = [],
   readOnly = false
 }) => {
-  const { title, description, completed, priority, dueDate, project, listId } = task;
+  const [showShareOptions, setShowShareOptions] = useState(false);
   
-  const handleComplete = () => {
-    if (!readOnly && onComplete) {
-      onComplete(task.id);
-    }
+  const taskList = task.listId && lists ? lists.find(list => list.id === task.listId) : null;
+  
+  const priorityColors = {
+    low: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+    medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+    high: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
   };
   
-  const handleDelete = () => {
-    if (!readOnly && onDelete) {
-      onDelete(task.id);
-    }
+  const priorityLabels = {
+    low: "Low",
+    medium: "Medium",
+    high: "High"
   };
   
-  const handleEdit = () => {
-    if (!readOnly && onEdit) {
-      onEdit(task);
-    }
-  };
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  };
-  
-  const priorityClasses = {
-    low: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-    medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-    high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-  };
-  
-  const getListColor = () => {
-    if (!listId || !lists) return '';
-    const list = lists.find(l => l.id === listId);
-    return list ? list.color : '';
-  };
-  
-  const getListName = () => {
-    if (!listId || !lists) return '';
-    const list = lists.find(l => l.id === listId);
-    return list ? list.name : '';
-  };
+  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !task.completed;
   
   return (
-    <div
-      className={cn(
-        "glass-card p-4 rounded-xl transition-all relative",
-        completed ? "opacity-70" : "",
-        listId && lists ? `border-l-4 ${getListColor()}` : ""
-      )}
-    >
+    <div className={cn(
+      "glass-card p-4 rounded-xl transition-all",
+      task.completed ? "opacity-70 dark:bg-gray-800/50" : ""
+    )}>
       <div className="flex items-start gap-3">
-        <button 
-          onClick={handleComplete} 
-          className={cn("mt-1 flex-shrink-0", readOnly ? "cursor-default" : "cursor-pointer")}
-          disabled={readOnly}
-        >
-          {completed ? (
-            <CheckCircle className="h-6 w-6 text-primary" />
-          ) : (
-            <Circle className="h-6 w-6 text-muted-foreground" />
-          )}
-        </button>
+        {onComplete && !readOnly && (
+          <button 
+            onClick={() => onComplete(task.id)} 
+            className={cn(
+              "flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors mt-0.5",
+              task.completed 
+                ? "bg-primary border-primary hover:bg-primary/90" 
+                : "border-gray-300 hover:border-primary/50 dark:border-gray-600"
+            )}
+          >
+            {task.completed && <Check className="h-3.5 w-3.5 text-primary-foreground" />}
+          </button>
+        )}
         
         <div className="flex-1 min-w-0">
-          <h3 className={cn(
-            "text-lg font-medium line-clamp-2",
-            completed && "line-through text-muted-foreground"
-          )}>
-            {title}
-          </h3>
-          
-          {description && (
-            <p className={cn(
-              "text-muted-foreground mt-1 line-clamp-3",
-              completed && "line-through"
+          <div className="flex items-start justify-between gap-2">
+            <h3 className={cn(
+              "font-medium text-lg break-words",
+              task.completed ? "line-through text-muted-foreground" : ""
             )}>
-              {description}
+              {task.title}
+            </h3>
+            
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <button
+                onClick={() => setShowShareOptions(true)}
+                className="p-1.5 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
+              
+              {!readOnly && onEdit && (
+                <button
+                  onClick={() => onEdit(task)}
+                  className="p-1.5 rounded-full text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </button>
+              )}
+              
+              {!readOnly && onDelete && (
+                <button
+                  onClick={() => onDelete(task.id)}
+                  className="p-1.5 rounded-full text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {task.description && (
+            <p className="mt-1 text-muted-foreground text-sm break-words">
+              {task.description}
             </p>
           )}
           
-          <div className="flex flex-wrap gap-2 mt-3">
-            <span className={`px-2 py-1 rounded text-xs font-medium ${priorityClasses[priority]}`}>
-              {priority.charAt(0).toUpperCase() + priority.slice(1)}
-            </span>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {taskList && (
+              <Badge variant="outline" className={cn("flex items-center gap-1 px-2 py-0.5")}>
+                <div className={cn("w-2 h-2 rounded-full", taskList.color)} />
+                <span>{taskList.name}</span>
+              </Badge>
+            )}
             
-            {dueDate && (
-              <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
-                Due: {formatDate(dueDate)}
+            {task.priority && (
+              <Badge variant="outline" className={cn("px-2 py-0.5", priorityColors[task.priority])}>
+                {priorityLabels[task.priority]} Priority
+              </Badge>
+            )}
+            
+            {task.project && (
+              <Badge variant="outline" className="px-2 py-0.5 flex items-center gap-1">
+                <ArrowUpRight className="h-3 w-3" />
+                {task.project}
+              </Badge>
+            )}
+          </div>
+          
+          <div className="mt-3 flex items-center text-xs text-muted-foreground">
+            <Clock className="h-3 w-3 mr-1" />
+            <span>Created {formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}</span>
+            
+            {task.dueDate && (
+              <span className="ml-2 flex items-center">
+                •
+                <span className={cn(
+                  "ml-2 flex items-center",
+                  isOverdue ? "text-destructive" : ""
+                )}>
+                  {isOverdue && <AlertCircle className="h-3 w-3 mr-1" />}
+                  Due {formatDistanceToNow(new Date(task.dueDate), { addSuffix: true })}
+                </span>
               </span>
             )}
             
-            {project && (
-              <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                {project}
-              </span>
-            )}
-            
-            {listId && lists && (
-              <span className={`px-2 py-1 rounded text-xs font-medium text-white ${getListColor()}`}>
-                {getListName()}
+            {task.sharedId && (
+              <span className="ml-2 flex items-center">
+                • <MessageSquare className="h-3 w-3 mx-1" /> Shared
               </span>
             )}
           </div>
         </div>
-        
-        {!readOnly && (
-          <div className="flex space-x-1">
-            <button 
-              onClick={handleEdit}
-              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <Pencil className="h-5 w-5 text-gray-500" />
-            </button>
-            <button 
-              onClick={handleDelete}
-              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <Trash2 className="h-5 w-5 text-gray-500" />
-            </button>
-          </div>
-        )}
       </div>
+      
+      <ShareOptions
+        isOpen={showShareOptions}
+        onClose={() => setShowShareOptions(false)}
+        taskList={[task]}
+        listName={taskList?.name || "My Tasks"}
+      />
     </div>
   );
 };
