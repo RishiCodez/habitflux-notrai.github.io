@@ -11,11 +11,18 @@ interface InvitationsListProps {
   onAccept?: (listId: string) => void;
 }
 
+interface Invitation {
+  listId: string;
+  listName: string;
+  createdBy: string;
+  invitedAt: string;
+}
+
 const InvitationsList: React.FC<InvitationsListProps> = ({ 
   userEmail, 
   onAccept 
 }) => {
-  const [invitations, setInvitations] = useState<any[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -26,7 +33,7 @@ const InvitationsList: React.FC<InvitationsListProps> = ({
     
     try {
       const invitationsList = await getInvitationsForUser(userEmail);
-      setInvitations(invitationsList);
+      setInvitations(invitationsList as Invitation[]);
     } catch (error: any) {
       setError(error.message || "Failed to load invitations");
     } finally {

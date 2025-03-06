@@ -23,6 +23,13 @@ interface SharedTaskListProps {
   currentUserEmail?: string;
 }
 
+interface AccessStatus {
+  canAccess: boolean;
+  canModify?: boolean;
+  reason?: string;
+  invitation?: any;
+}
+
 const SharedTaskList: React.FC<SharedTaskListProps> = ({ 
   sharedListId,
   currentUserEmail = 'demo@example.com' // For demo purposes
@@ -33,12 +40,7 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [showCollaborationModal, setShowCollaborationModal] = useState(false);
-  const [accessStatus, setAccessStatus] = useState<{
-    canAccess: boolean;
-    canModify?: boolean;
-    reason?: string;
-    invitation?: any;
-  } | null>(null);
+  const [accessStatus, setAccessStatus] = useState<AccessStatus | null>(null);
   
   const { toast } = useToast();
 
@@ -48,7 +50,7 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
     const checkAccess = async () => {
       try {
         const accessResult = await checkListAccess(sharedListId, currentUserEmail);
-        setAccessStatus(accessResult);
+        setAccessStatus(accessResult as AccessStatus);
         
         if (!accessResult.canAccess) {
           setIsLoading(false);
@@ -220,7 +222,7 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
       
       // Refresh access status
       const accessResult = await checkListAccess(sharedListId, currentUserEmail);
-      setAccessStatus(accessResult);
+      setAccessStatus(accessResult as AccessStatus);
     } catch (error: any) {
       toast({
         title: "Error accepting invitation",
@@ -241,7 +243,7 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
       
       // Refresh access status
       const accessResult = await checkListAccess(sharedListId, currentUserEmail);
-      setAccessStatus(accessResult);
+      setAccessStatus(accessResult as AccessStatus);
     } catch (error: any) {
       toast({
         title: "Error rejecting invitation",
@@ -254,7 +256,7 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
   const handleDataUpdate = async () => {
     // Refresh the access status and list data
     const accessResult = await checkListAccess(sharedListId, currentUserEmail);
-    setAccessStatus(accessResult);
+    setAccessStatus(accessResult as AccessStatus);
   };
 
   if (isLoading) {

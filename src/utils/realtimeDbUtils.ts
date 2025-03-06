@@ -29,6 +29,32 @@ const removeUndefinedValues = (obj: any): any => {
   }, {});
 };
 
+// Real-time subscription functions
+export const subscribeToSharedList = (listId: string, callback: (data: any) => void): DatabaseReference => {
+  try {
+    const db = checkDatabaseConnection();
+    const listRef = ref(db, `sharedLists/${listId}`);
+    
+    onValue(listRef, (snapshot) => {
+      const data = snapshot.val();
+      callback(data);
+    });
+    
+    return listRef;
+  } catch (error) {
+    console.error('Error subscribing to shared list:', error);
+    throw error;
+  }
+};
+
+export const unsubscribeFromSharedList = (listRef: DatabaseReference) => {
+  try {
+    off(listRef);
+  } catch (error) {
+    console.error('Error unsubscribing from shared list:', error);
+  }
+};
+
 // Shared task list operations
 export const createSharedTaskList = async (name: string, createdBy: string) => {
   try {
@@ -311,7 +337,12 @@ export const updateListAccessType = async (listId: string, accessType: 'private'
   }
 };
 
-export const checkListAccess = async (listId: string, userEmail: string) => {
+export const checkListAccess = async (listId: string, userEmail: string): Promise<{
+  canAccess: boolean;
+  canModify?: boolean;
+  reason?: string;
+  invitation?: any;
+}> => {
   try {
     const db = checkDatabaseConnection();
     const listRef = ref(db, `sharedLists/${listId}`);
@@ -358,7 +389,7 @@ export const checkListAccess = async (listId: string, userEmail: string) => {
   }
 };
 
-export const getInvitationsForUser = async (userEmail: string) => {
+export const getInvitationsForUser = async (userEmail: string): Promise<any[]> => {
   try {
     const db = checkDatabaseConnection();
     const listsRef = ref(db, 'sharedLists');

@@ -92,7 +92,7 @@ const TasksPage: React.FC = () => {
     
     try {
       const invitations = await getInvitationsForUser(currentUserEmail);
-      setHasInvitations(invitations.length > 0);
+      setHasInvitations(Array.isArray(invitations) && invitations.length > 0);
     } catch (error) {
       console.error("Failed to check invitations:", error);
     }
@@ -297,7 +297,7 @@ const TasksPage: React.FC = () => {
   const handleRefreshInvitations = async () => {
     try {
       const invitations = await getInvitationsForUser(currentUserEmail);
-      setHasInvitations(invitations.length > 0);
+      setHasInvitations(Array.isArray(invitations) && invitations.length > 0);
     } catch (error) {
       console.error("Failed to refresh invitations:", error);
     }
