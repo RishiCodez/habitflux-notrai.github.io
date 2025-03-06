@@ -1,15 +1,7 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
+import { Pencil, Trash2, CheckCircle, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Check, Edit, Trash, MoreVertical } from 'lucide-react';
-import CustomButton from './CustomButton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 
 export interface Task {
   id: string;
@@ -24,128 +16,143 @@ export interface Task {
 
 interface TaskCardProps {
   task: Task;
-  onComplete: (id: string) => void;
-  onDelete: (id: string) => void;
-  onEdit: (task: Task) => void;
-  lists?: Array<{ id: string; name: string; color: string }>;
+  lists?: { id: string; name: string; color: string; isShared?: boolean }[];
+  onComplete?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onEdit?: (task: Task) => void;
+  readOnly?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onDelete, onEdit, lists }) => {
-  const priorityColors = {
-    low: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    medium: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-    high: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+const TaskCard: React.FC<TaskCardProps> = ({ 
+  task, 
+  lists, 
+  onComplete, 
+  onDelete, 
+  onEdit,
+  readOnly = false
+}) => {
+  const { title, description, completed, priority, dueDate, project, listId } = task;
+  
+  const handleComplete = () => {
+    if (!readOnly && onComplete) {
+      onComplete(task.id);
+    }
   };
   
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
-    onDelete(task.id);
+  const handleDelete = () => {
+    if (!readOnly && onDelete) {
+      onDelete(task.id);
+    }
   };
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
-    onEdit(task);
+  
+  const handleEdit = () => {
+    if (!readOnly && onEdit) {
+      onEdit(task);
+    }
   };
-
-  const handleComplete = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
-    onComplete(task.id);
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
   };
-
-  // Find the list this task belongs to
-  const taskList = task.listId && lists ? lists.find(list => list.id === task.listId) : undefined;
+  
+  const priorityClasses = {
+    low: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+    medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+  };
+  
+  const getListColor = () => {
+    if (!listId || !lists) return '';
+    const list = lists.find(l => l.id === listId);
+    return list ? list.color : '';
+  };
+  
+  const getListName = () => {
+    if (!listId || !lists) return '';
+    const list = lists.find(l => l.id === listId);
+    return list ? list.name : '';
+  };
   
   return (
-    <div 
+    <div
       className={cn(
-        "glass-card p-4 rounded-lg transition-all duration-200 relative",
-        task.completed ? "opacity-60" : ""
+        "glass-card p-4 rounded-xl transition-all relative",
+        completed ? "opacity-70" : "",
+        listId && lists ? `border-l-4 ${getListColor()}` : ""
       )}
     >
-      <div className="flex items-start gap-4">
-        <button
-          onClick={handleComplete}
-          className={cn(
-            "flex-shrink-0 w-6 h-6 rounded-full border transition-colors",
-            task.completed 
-              ? "bg-primary border-primary text-primary-foreground" 
-              : "border-input hover:border-primary"
-          )}
+      <div className="flex items-start gap-3">
+        <button 
+          onClick={handleComplete} 
+          className={cn("mt-1 flex-shrink-0", readOnly ? "cursor-default" : "cursor-pointer")}
+          disabled={readOnly}
         >
-          {task.completed && <Check className="h-4 w-4 m-auto" />}
+          {completed ? (
+            <CheckCircle className="h-6 w-6 text-primary" />
+          ) : (
+            <Circle className="h-6 w-6 text-muted-foreground" />
+          )}
         </button>
         
-        <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className={cn(
-              "text-base font-medium transition-all",
-              task.completed ? "line-through text-muted-foreground" : ""
-            )}>
-              {task.title}
-            </h3>
-            {task.project && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                {task.project}
-              </span>
-            )}
-            {taskList && (
-              <span className={cn(
-                "text-xs px-2 py-0.5 rounded-full text-white",
-                taskList.color
-              )}>
-                {taskList.name}
-              </span>
-            )}
-          </div>
+        <div className="flex-1 min-w-0">
+          <h3 className={cn(
+            "text-lg font-medium line-clamp-2",
+            completed && "line-through text-muted-foreground"
+          )}>
+            {title}
+          </h3>
           
-          {task.description && (
-            <p className="mt-1 text-sm text-muted-foreground">
-              {task.description}
+          {description && (
+            <p className={cn(
+              "text-muted-foreground mt-1 line-clamp-3",
+              completed && "line-through"
+            )}>
+              {description}
             </p>
           )}
           
-          <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className={cn(
-                "text-xs px-2 py-0.5 rounded-full",
-                priorityColors[task.priority]
-              )}>
-                {task.priority}
-              </span>
-              
-              {task.dueDate && (
-                <span className="text-xs text-muted-foreground">
-                  Due: {task.dueDate}
-                </span>
-              )}
-            </div>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <span className={`px-2 py-1 rounded text-xs font-medium ${priorityClasses[priority]}`}>
+              {priority.charAt(0).toUpperCase() + priority.slice(1)}
+            </span>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-1 h-8 w-8"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-36 z-50">
-                <DropdownMenuItem onClick={handleEdit}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={handleDelete}
-                  className="text-red-600 hover:text-red-700 focus:text-red-700"
-                >
-                  <Trash className="h-4 w-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {dueDate && (
+              <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
+                Due: {formatDate(dueDate)}
+              </span>
+            )}
+            
+            {project && (
+              <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                {project}
+              </span>
+            )}
+            
+            {listId && lists && (
+              <span className={`px-2 py-1 rounded text-xs font-medium text-white ${getListColor()}`}>
+                {getListName()}
+              </span>
+            )}
           </div>
         </div>
+        
+        {!readOnly && (
+          <div className="flex space-x-1">
+            <button 
+              onClick={handleEdit}
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Pencil className="h-5 w-5 text-gray-500" />
+            </button>
+            <button 
+              onClick={handleDelete}
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Trash2 className="h-5 w-5 text-gray-500" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

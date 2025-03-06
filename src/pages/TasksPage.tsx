@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Plus, Search, ListFilter, FolderPlus, CheckSquare, Users, Share2 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
@@ -6,6 +6,7 @@ import TaskCard, { Task } from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
 import CustomButton from '../components/CustomButton';
 import SharedTaskList from '../components/SharedTaskList';
+import InvitationsList from '../components/InvitationsList';
 import { useToast } from '@/hooks/use-toast';
 import { 
   saveTasks, 
@@ -17,7 +18,8 @@ import {
 } from '../utils/localStorageUtils';
 import { 
   createSharedTaskList, 
-  getSharedListIdFromUrl 
+  getSharedListIdFromUrl,
+  getInvitationsForUser
 } from '../utils/realtimeDbUtils';
 import TourGuide from '../components/TourGuide';
 import { Button } from '@/components/ui/button';
@@ -28,6 +30,7 @@ interface TaskList {
   id: string;
   name: string;
   color: string;
+  isShared?: boolean;
 }
 
 const defaultLists: TaskList[] = [
@@ -35,6 +38,8 @@ const defaultLists: TaskList[] = [
   { id: 'personal', name: 'Personal', color: 'bg-purple-500' },
   { id: 'shopping', name: 'Shopping', color: 'bg-green-500' }
 ];
+
+const currentUserEmail = 'demo@example.com';
 
 const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -54,10 +59,11 @@ const TasksPage: React.FC = () => {
   const [newSharedListName, setNewSharedListName] = useState('');
   const [sharedListId, setSharedListId] = useState<string | null>(null);
   const [isCreatingSharedList, setIsCreatingSharedList] = useState(false);
+  const [hasInvitations, setHasInvitations] = useState(false);
   
   const { toast } = useToast();
 
-  useEffect(() => {
+  const loadInitialData = useCallback(async () => {
     const savedTasks = loadTasks();
     if (savedTasks) {
       setTasks(savedTasks);
@@ -83,7 +89,18 @@ const TasksPage: React.FC = () => {
     if (urlSharedListId) {
       setSharedListId(urlSharedListId);
     }
+    
+    try {
+      const invitations = await getInvitationsForUser(currentUserEmail);
+      setHasInvitations(invitations.length > 0);
+    } catch (error) {
+      console.error("Failed to check invitations:", error);
+    }
   }, []);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   const projects = Array.from(new Set(tasks.map(task => task.project).filter(Boolean)));
   
@@ -232,7 +249,7 @@ const TasksPage: React.FC = () => {
     setIsCreatingSharedList(true);
     
     try {
-      const userId = 'user-' + Math.random().toString(36).substr(2, 9);
+      const userId = currentUserEmail;
       const newSharedListId = await createSharedTaskList(newSharedListName, userId);
       
       const newList = {
@@ -273,6 +290,19 @@ const TasksPage: React.FC = () => {
     window.history.replaceState({}, '', url.toString());
   };
   
+  const handleAcceptInvitation = (listId: string) => {
+    setSharedListId(listId);
+  };
+  
+  const handleRefreshInvitations = async () => {
+    try {
+      const invitations = await getInvitationsForUser(currentUserEmail);
+      setHasInvitations(invitations.length > 0);
+    } catch (error) {
+      console.error("Failed to refresh invitations:", error);
+    }
+  };
+  
   return (
     <AppLayout>
       {showTour && <TourGuide onComplete={handleTourComplete} />}
@@ -306,8 +336,17 @@ const TasksPage: React.FC = () => {
         </div>
       </div>
       
+      {!sharedListId && hasInvitations && (
+        <div className="mb-6">
+          <InvitationsList 
+            userEmail={currentUserEmail} 
+            onAccept={handleAcceptInvitation}
+          />
+        </div>
+      )}
+      
       {sharedListId ? (
-        <SharedTaskList sharedListId={sharedListId} />
+        <SharedTaskList sharedListId={sharedListId} currentUserEmail={currentUserEmail} />
       ) : (
         <>
           <div className="mb-6 glass-card p-3 rounded-lg overflow-x-auto" id="lists-bar">
@@ -337,7 +376,7 @@ const TasksPage: React.FC = () => {
                   )}
                 >
                   <span className={`h-3 w-3 rounded-full mr-2 ${list.color}`}></span>
-                  {list.name}
+                  {list.name} {list.isShared && <Users className="ml-1 h-3 w-3" />}
                 </button>
               ))}
             </div>

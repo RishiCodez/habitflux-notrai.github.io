@@ -1,30 +1,50 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Copy, Link, Mail, Share2, AlertTriangle } from 'lucide-react';
-import { addCollaborator, generateShareableLink } from '../utils/realtimeDbUtils';
+import { Users, Copy, Link, Mail, Share2, AlertTriangle, Globe, Lock } from 'lucide-react';
+import { 
+  addCollaborator, 
+  generateShareableLink, 
+  updateListAccessType 
+} from '../utils/realtimeDbUtils';
+import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 interface CollaborationModalProps {
   isOpen: boolean;
   onClose: () => void;
   sharedListId: string | null;
   sharedListName: string;
+  listData: any;
+  onDataUpdate: () => void;
 }
 
 const CollaborationModal: React.FC<CollaborationModalProps> = ({
   isOpen,
   onClose,
   sharedListId,
-  sharedListName
+  sharedListName,
+  listData,
+  onDataUpdate
 }) => {
   const [email, setEmail] = useState('');
   const [isCopied, setIsCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accessType, setAccessType] = useState<'private' | 'public'>(
+    listData?.accessType || 'private'
+  );
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (listData?.accessType) {
+      setAccessType(listData.accessType);
+    }
+  }, [listData]);
 
   const handleAddCollaborator = async () => {
     if (!email.trim() || !sharedListId) return;
@@ -33,22 +53,21 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
     setError(null);
     
     try {
-      // In a real app, you'd send an invitation email here
-      // For now, we'll just add the email to the collaborators list
-      await addCollaborator(sharedListId, email);
+      const result = await addCollaborator(sharedListId, email);
       
       toast({
-        title: "Collaborator added",
-        description: `${email} has been added to "${sharedListName}"`,
+        title: "Invitation sent",
+        description: `An invitation has been sent to ${email}`,
       });
       
       setEmail('');
+      onDataUpdate();
     } catch (error: any) {
       setError(error.message || 'Failed to add collaborator');
       
       toast({
-        title: "Failed to add collaborator",
-        description: error.message || "There was an error adding the collaborator",
+        title: "Failed to send invitation",
+        description: error.message || "There was an error sending the invitation",
         variant: "destructive",
       });
     } finally {
@@ -69,6 +88,28 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
     });
     
     setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleUpdateAccessType = async (newAccessType: 'private' | 'public') => {
+    if (!sharedListId) return;
+    
+    try {
+      await updateListAccessType(sharedListId, newAccessType);
+      setAccessType(newAccessType);
+      
+      toast({
+        title: "Access type updated",
+        description: `List is now ${newAccessType === 'public' ? 'accessible to anyone with the link' : 'private and invitation-only'}`,
+      });
+      
+      onDataUpdate();
+    } catch (error: any) {
+      toast({
+        title: "Failed to update access type",
+        description: error.message || "There was an error updating the access settings",
+        variant: "destructive",
+      });
+    }
   };
 
   const renderFirebaseRulesHelp = () => {
@@ -93,6 +134,54 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
 }`}
         </pre>
         <p className="text-xs mt-2 italic">Note: These rules allow anyone to read/write your database. For production apps, use stricter rules.</p>
+      </div>
+    );
+  };
+
+  const renderPendingInvitations = () => {
+    if (!listData || !listData.pendingInvitations) return null;
+    
+    const pendingEmails = Object.keys(listData.pendingInvitations);
+    if (pendingEmails.length === 0) return null;
+    
+    return (
+      <div className="mt-4">
+        <h3 className="text-sm font-medium mb-2">Pending invitations</h3>
+        <div className="space-y-2">
+          {pendingEmails.map(email => (
+            <div key={email} className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <span className="text-sm">{email}</span>
+              <span className="text-xs text-muted-foreground">
+                Pending
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCollaborators = () => {
+    if (!listData || !listData.collaborators) return null;
+    
+    const collaborators = listData.collaborators;
+    if (collaborators.length === 0) return null;
+    
+    return (
+      <div className="mt-4">
+        <h3 className="text-sm font-medium mb-2">Current collaborators</h3>
+        <div className="space-y-2">
+          {collaborators.map((email: string) => (
+            <div key={email} className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <span className="text-sm">{email}</span>
+              {email === listData.createdBy && (
+                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                  Owner
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
@@ -122,25 +211,63 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
         )}
         
         <div className="flex flex-col gap-4 py-4">
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium">Access control</h3>
+            <RadioGroup 
+              value={accessType} 
+              onValueChange={(value) => handleUpdateAccessType(value as 'private' | 'public')}
+              className="flex flex-col space-y-1"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="private" id="private" />
+                <Label htmlFor="private" className="flex items-center cursor-pointer">
+                  <Lock className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <div>
+                    <span>Private (invitation only)</span>
+                    <p className="text-xs text-muted-foreground">Only people you invite can access</p>
+                  </div>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="public" id="public" />
+                <Label htmlFor="public" className="flex items-center cursor-pointer">
+                  <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <div>
+                    <span>Public</span>
+                    <p className="text-xs text-muted-foreground">Anyone with the link can access</p>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-medium">Add collaborators</h3>
             <div className="flex gap-2">
               <Input
                 placeholder="Email address"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="flex-1"
               />
               <Button 
                 onClick={handleAddCollaborator}
-                disabled={isLoading}
+                disabled={isLoading || !email.includes('@')}
               >
-                {isLoading ? "Adding..." : "Add"}
+                {isLoading ? "Sending..." : "Invite"}
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              An invitation will be sent to the email address
+            </p>
           </div>
           
-          <div className="flex flex-col gap-2">
+          {renderPendingInvitations()}
+          
+          {renderCollaborators()}
+          
+          <div className="flex flex-col gap-2 mt-2">
             <h3 className="text-sm font-medium">Share link</h3>
             <div className="flex items-center gap-2">
               <Input
@@ -153,21 +280,6 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
                 <Copy className="ml-2 h-4 w-4" />
               </Button>
             </div>
-          </div>
-          
-          <div className="flex justify-center gap-4 mt-2">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              Email
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Link className="h-4 w-4" />
-              Copy Link
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
           </div>
         </div>
         
