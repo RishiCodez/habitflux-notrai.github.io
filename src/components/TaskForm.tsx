@@ -45,6 +45,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, lists, onSubmit, onCancel }) 
       title,
       completed: task ? task.completed : false,
       priority,
+      createdAt: task ? task.createdAt : new Date().toISOString(),
       ...(description ? { description } : {}),
       ...(dueDate ? { dueDate } : {}),
       ...(project ? { project } : {}),

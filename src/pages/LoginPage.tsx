@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Mail, Lock, Calendar } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Calendar, AlertCircle } from 'lucide-react';
 import CustomButton from '../components/CustomButton';
 
 const LoginPage: React.FC = () => {
