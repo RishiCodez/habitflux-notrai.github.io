@@ -52,7 +52,7 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
         const accessResult = await checkListAccess(sharedListId, currentUserEmail);
         setAccessStatus(accessResult as AccessStatus);
         
-        if (!accessResult.canAccess) {
+        if (!(accessResult as AccessStatus).canAccess) {
           setIsLoading(false);
           return;
         }
