@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Mail, Lock, Calendar, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, AlertCircle, LogIn } from 'lucide-react';
 import CustomButton from '../components/CustomButton';
 
 const LoginPage: React.FC = () => {
@@ -136,8 +136,8 @@ const LoginPage: React.FC = () => {
                   className="w-full flex items-center justify-center gap-2"
                   disabled={loading}
                 >
-                  <Calendar className="h-5 w-5 text-primary" />
-                  Google (with Calendar)
+                  <LogIn className="h-5 w-5 text-primary" />
+                  Sign in with Google
                 </CustomButton>
               </div>
             </div>
