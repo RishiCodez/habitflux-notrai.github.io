@@ -8,14 +8,12 @@ import {
   signOut, 
   onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithPopup,
-  User as FirebaseUser
+  signInWithPopup
 } from 'firebase/auth';
 import { checkFirstVisit } from '../utils/localStorageUtils';
 import { app, auth } from '../utils/firebase';
 
 const googleProvider = new GoogleAuthProvider();
-// Remove Google Calendar scope
 
 interface User {
   displayName?: string;

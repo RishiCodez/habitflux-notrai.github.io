@@ -18,7 +18,7 @@ export interface GoogleCalendarEvent {
   location?: string;
 }
 
-// Placeholder function in case it's referenced elsewhere
+// Placeholder function that no longer requires arguments
 export const fetchCalendarEvents = async (): Promise<GoogleCalendarEvent[]> => {
   toast.error("Google Calendar integration has been removed");
   return [];
