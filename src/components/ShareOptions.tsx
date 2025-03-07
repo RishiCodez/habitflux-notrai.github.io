@@ -72,12 +72,15 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="share-description">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Share2 className="mr-2 h-5 w-5" />
             Share {isSharedList ? "Collaborative" : ""} Task List
           </DialogTitle>
+          <div id="share-description" className="text-sm text-muted-foreground">
+            Share your task list with others through various methods.
+          </div>
         </DialogHeader>
         
         <div className="py-4">

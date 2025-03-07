@@ -51,13 +51,13 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="modal-description">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Users className="mr-2 h-5 w-5" />
             Share "{sharedListName}"
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="modal-description">
             Share this task list using a link. Anyone with the link can view or edit the list.
           </DialogDescription>
         </DialogHeader>
