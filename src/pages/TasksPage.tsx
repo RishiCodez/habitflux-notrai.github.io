@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, Search, Users, Share2, Trash2, MoreHorizontal } from 'lucide-react';
+import { Plus, Search, Users, Share2, Trash2, MoreHorizontal, FolderPlus, CheckSquare } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import TaskCard, { Task } from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
@@ -8,29 +8,6 @@ import CustomButton from '../components/CustomButton';
 import SharedTaskList from '../components/SharedTaskList';
 import ShareOptions from '../components/ShareOptions';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  saveTasks, 
-  loadTasks, 
-  saveTaskLists, 
-  loadTaskLists, 
-  checkFirstVisit, 
-  saveFirstVisitComplete 
-} from '../utils/localStorageUtils';
-import { 
-  createSharedTaskList, 
-  getSharedListIdFromUrl
-} from '../utils/realtimeDbUtils';
-import TourGuide from '../components/TourGuide';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useNavigate, useLocation } from 'react-router-dom';
 
 interface TaskList {
   id: string;
