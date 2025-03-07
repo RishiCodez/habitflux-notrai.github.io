@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, Search, ListFilter, FolderPlus, CheckSquare, Users, Share2 } from 'lucide-react';
+import { Plus, Search, ListFilter, FolderPlus, CheckSquare, Users, Share2, Trash2 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import TaskCard, { Task } from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
@@ -26,6 +25,13 @@ import TourGuide from '../components/TourGuide';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface TaskList {
   id: string;
@@ -64,6 +70,8 @@ const TasksPage: React.FC = () => {
   const [showShareOptions, setShowShareOptions] = useState(false);
   
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const loadInitialData = useCallback(async () => {
     const savedTasks = loadTasks();
@@ -87,11 +95,19 @@ const TasksPage: React.FC = () => {
       setShowTour(true);
     }
     
+    // Modified to check URL params first, then try from location state
     const urlSharedListId = getSharedListIdFromUrl();
     if (urlSharedListId) {
       setSharedListId(urlSharedListId);
+    } else if (location.state?.sharedListId) {
+      setSharedListId(location.state.sharedListId);
+      
+      // Update URL with shared list ID
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('shared', location.state.sharedListId);
+      window.history.pushState({}, '', newUrl.toString());
     }
-  }, []);
+  }, [location]);
 
   useEffect(() => {
     loadInitialData();
@@ -204,17 +220,20 @@ const TasksPage: React.FC = () => {
       return;
     }
 
-    const updatedLists = taskLists.filter(list => list.id !== id);
-    setTaskLists(updatedLists);
-    saveTaskLists(updatedLists);
-    if (listFilter === id) {
-      setListFilter(null);
+    // Confirm before deleting
+    if (window.confirm(`Are you sure you want to delete the "${taskLists.find(list => list.id === id)?.name}" list?`)) {
+      const updatedLists = taskLists.filter(list => list.id !== id);
+      setTaskLists(updatedLists);
+      saveTaskLists(updatedLists);
+      if (listFilter === id) {
+        setListFilter(null);
+      }
+      
+      toast({
+        title: "List deleted",
+        description: "The list has been successfully removed."
+      });
     }
-    
-    toast({
-      title: "List deleted",
-      description: "The list has been successfully removed."
-    });
   };
   
   const colorOptions = [
@@ -366,19 +385,52 @@ const TasksPage: React.FC = () => {
               </button>
               
               {taskLists.map(list => (
-                <button
-                  key={list.id}
-                  onClick={() => setListFilter(list.id)}
-                  className={cn(
-                    "px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center",
-                    listFilter === list.id 
-                      ? "bg-primary text-primary-foreground" 
-                      : "hover:bg-accent hover:text-accent-foreground"
-                  )}
-                >
-                  <span className={`h-3 w-3 rounded-full mr-2 ${list.color}`}></span>
-                  {list.name} {list.isShared && <Users className="ml-1 h-3 w-3" />}
-                </button>
+                <div key={list.id} className="flex items-center">
+                  <button
+                    onClick={() => {
+                      if (list.isShared) {
+                        // For shared lists, navigate to the tasks page with the shared list ID
+                        setSharedListId(list.id);
+                        
+                        // Update URL with shared list ID
+                        const newUrl = new URL(window.location.href);
+                        newUrl.searchParams.set('shared', list.id);
+                        window.history.pushState({}, '', newUrl.toString());
+                      } else {
+                        setListFilter(list.id);
+                      }
+                    }}
+                    className={cn(
+                      "px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center",
+                      (listFilter === list.id || (list.isShared && sharedListId === list.id))
+                        ? "bg-primary text-primary-foreground" 
+                        : "hover:bg-accent hover:text-accent-foreground"
+                    )}
+                  >
+                    <span className={`h-3 w-3 rounded-full mr-2 ${list.color}`}></span>
+                    {list.name} {list.isShared && <Users className="ml-1 h-3 w-3" />}
+                  </button>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 p-0 ml-1">
+                        <span className="sr-only">Open menu</span>
+                        <span className="h-1 w-1 rounded-full bg-current"></span>
+                        <span className="h-1 w-1 rounded-full bg-current"></span>
+                        <span className="h-1 w-1 rounded-full bg-current"></span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        className="text-red-500 focus:text-red-500 flex items-center cursor-pointer"
+                        onClick={() => handleDeleteList(list.id)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete List
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               ))}
             </div>
           </div>
