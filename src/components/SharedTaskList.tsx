@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Share2, RefreshCw, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
@@ -42,6 +43,7 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
   const [showCollaborationModal, setShowCollaborationModal] = useState(false);
   const [accessStatus, setAccessStatus] = useState<AccessStatus | null>(null);
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   
   const listRef = useRef<any>(null);
   const { toast } = useToast();
@@ -49,21 +51,29 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
   useEffect(() => {
     if (!sharedListId) {
       setIsLoading(false);
+      setLoadError('No shared list ID provided');
       return;
     }
     
+    console.log('Loading shared list:', sharedListId);
+    
     const checkAccess = async () => {
       try {
+        console.log('Checking access for list:', sharedListId);
         const accessResult = await checkListAccess(sharedListId, currentUserEmail);
+        console.log('Access result:', accessResult);
         setAccessStatus(accessResult as AccessStatus);
         
         if (!(accessResult as AccessStatus).canAccess) {
           setIsLoading(false);
+          setLoadError('You do not have access to this shared list');
           return;
         }
         
         // If user has access, load the list data
+        console.log('Subscribing to shared list updates');
         const dbRef = subscribeToSharedList(sharedListId, (data) => {
+          console.log('Received shared list data:', data);
           if (data) {
             setSharedList(data);
             
@@ -77,7 +87,9 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
             } else {
               setSharedTasks([]);
             }
+            setLoadError(null);
           } else {
+            setLoadError('Shared list not found or empty');
             toast({
               title: "Shared list not found",
               description: "The shared list you're trying to access doesn't exist",
@@ -89,8 +101,9 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
         });
         
         listRef.current = dbRef;
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error accessing shared list:", error);
+        setLoadError(error.message || 'Error loading shared list');
         toast({
           title: "Error accessing shared list",
           description: "There was a problem checking your access to this list",
@@ -103,6 +116,7 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
     checkAccess();
     
     return () => {
+      console.log('Cleaning up shared list subscription');
       if (listRef.current) {
         unsubscribeFromSharedList(listRef.current);
       }
@@ -281,6 +295,20 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
     );
   }
 
+  if (loadError && !accessStatus?.canAccess) {
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-xl font-semibold">Error Loading Shared List</h2>
+        <p className="mt-2 text-muted-foreground">
+          {loadError}
+        </p>
+        <Button className="mt-4" onClick={() => window.location.href = '/tasks'}>
+          Return to My Tasks
+        </Button>
+      </div>
+    );
+  }
+  
   if (!accessStatus?.canAccess) {
     return (
       <div className="p-8 text-center">
@@ -355,6 +383,9 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
         <p className="mt-2 text-muted-foreground">
           The shared list you're trying to access doesn't exist or has been deleted.
         </p>
+        <Button className="mt-4" onClick={() => window.location.href = '/tasks'}>
+          Return to My Tasks
+        </Button>
       </div>
     );
   }
