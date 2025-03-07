@@ -431,7 +431,7 @@ export const getInvitationsForUser = async (userEmail: string): Promise<any[]> =
 };
 
 export const generateShareableLink = (listId: string) => {
-  // Create a shareable link that includes the list ID
+  // Create a shareable link that includes the list ID with the full origin URL
   return `${window.location.origin}/tasks?shared=${listId}`;
 };
 

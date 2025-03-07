@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,8 +5,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Copy, AlertTriangle, Globe, Lock } from 'lucide-react';
 import { 
-  addCollaborator, 
-  generateShareableLink, 
   updateListAccessType 
 } from '../utils/realtimeDbUtils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -30,9 +27,7 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
   listData,
   onDataUpdate
 }) => {
-  const [email, setEmail] = useState('');
   const [isCopied, setIsCopied] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accessType, setAccessType] = useState<'private' | 'public'>(
     listData?.accessType || 'private'
@@ -44,35 +39,6 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
       setAccessType(listData.accessType);
     }
   }, [listData]);
-
-  const handleAddCollaborator = async () => {
-    if (!email.trim() || !sharedListId) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await addCollaborator(sharedListId, email);
-      
-      toast({
-        title: "Invitation sent",
-        description: `An invitation has been sent to ${email}`,
-      });
-      
-      setEmail('');
-      onDataUpdate();
-    } catch (error: any) {
-      setError(error.message || 'Failed to add collaborator');
-      
-      toast({
-        title: "Failed to send invitation",
-        description: error.message || "There was an error sending the invitation",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleCopyLink = () => {
     if (!sharedListId) return;
@@ -111,6 +77,11 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
     }
   };
 
+  const generateShareableLink = (listId: string) => {
+    // Create a shareable link with the full origin to prevent 404 errors
+    return `${window.location.origin}/tasks?shared=${listId}`;
+  };
+
   const renderFirebaseRulesHelp = () => {
     if (!error || !error.includes('Firebase Realtime Database security rules')) return null;
     
@@ -133,29 +104,6 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
 }`}
         </pre>
         <p className="text-xs mt-2 italic">Note: These rules allow anyone to read/write your database. For production apps, use stricter rules.</p>
-      </div>
-    );
-  };
-
-  const renderPendingInvitations = () => {
-    if (!listData || !listData.pendingInvitations) return null;
-    
-    const pendingEmails = Object.keys(listData.pendingInvitations);
-    if (pendingEmails.length === 0) return null;
-    
-    return (
-      <div className="mt-4">
-        <h3 className="text-sm font-medium mb-2">Pending invitations</h3>
-        <div className="space-y-2">
-          {pendingEmails.map(email => (
-            <div key={email} className="flex items-center justify-between p-2 bg-muted rounded-md">
-              <span className="text-sm">{email}</span>
-              <span className="text-xs text-muted-foreground">
-                Pending
-              </span>
-            </div>
-          ))}
-        </div>
       </div>
     );
   };
@@ -191,10 +139,10 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Users className="mr-2 h-5 w-5" />
-            Collaborate on "{sharedListName}"
+            Share "{sharedListName}"
           </DialogTitle>
           <DialogDescription>
-            Invite others to collaborate on this task list in real-time.
+            Share this task list using a link. Anyone with the link can view or edit based on your access settings.
           </DialogDescription>
         </DialogHeader>
         
@@ -222,8 +170,8 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
                 <Label htmlFor="private" className="flex items-center cursor-pointer">
                   <Lock className="h-4 w-4 mr-2 text-muted-foreground" />
                   <div>
-                    <span>Private (invitation only)</span>
-                    <p className="text-xs text-muted-foreground">Only people you invite can access</p>
+                    <span>Private (link only)</span>
+                    <p className="text-xs text-muted-foreground">Only people with the link can access</p>
                   </div>
                 </Label>
               </div>
@@ -239,30 +187,6 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
               </div>
             </RadioGroup>
           </div>
-          
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">Add collaborators</h3>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Email address"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1"
-              />
-              <Button 
-                onClick={handleAddCollaborator}
-                disabled={isLoading || !email.includes('@')}
-              >
-                {isLoading ? "Sending..." : "Invite"}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              An invitation will be sent to the email address
-            </p>
-          </div>
-          
-          {renderPendingInvitations()}
           
           {renderCollaborators()}
           
