@@ -385,7 +385,7 @@ const TasksPage: React.FC = () => {
               </button>
               
               {taskLists.map(list => (
-                <div key={list.id} className="flex items-center">
+                <div key={list.id} className="relative group">
                   <button
                     onClick={() => {
                       if (list.isShared) {
@@ -413,7 +413,11 @@ const TasksPage: React.FC = () => {
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 p-0 ml-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
+                      >
                         <span className="sr-only">Open menu</span>
                         <span className="h-1 w-1 rounded-full bg-current"></span>
                         <span className="h-1 w-1 rounded-full bg-current"></span>
