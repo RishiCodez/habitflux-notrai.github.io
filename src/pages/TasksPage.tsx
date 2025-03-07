@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, Search, ListFilter, FolderPlus, CheckSquare, Users, Share2, Trash2 } from 'lucide-react';
+import { Plus, Search, Users, Share2, Trash2, MoreHorizontal } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import TaskCard, { Task } from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
 import CustomButton from '../components/CustomButton';
 import SharedTaskList from '../components/SharedTaskList';
-import InvitationsList from '../components/InvitationsList';
 import ShareOptions from '../components/ShareOptions';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -46,7 +45,6 @@ const defaultLists: TaskList[] = [
   { id: 'shopping', name: 'Shopping', color: 'bg-green-500' }
 ];
 
-// Use the current user's email from the auth context if available
 const currentUserEmail = 'user@example.com';
 
 const TasksPage: React.FC = () => {
@@ -95,14 +93,14 @@ const TasksPage: React.FC = () => {
       setShowTour(true);
     }
     
-    // Modified to check URL params first, then try from location state
     const urlSharedListId = getSharedListIdFromUrl();
     if (urlSharedListId) {
+      console.log("Found shared list ID in URL:", urlSharedListId);
       setSharedListId(urlSharedListId);
     } else if (location.state?.sharedListId) {
+      console.log("Found shared list ID in location state:", location.state.sharedListId);
       setSharedListId(location.state.sharedListId);
       
-      // Update URL with shared list ID
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('shared', location.state.sharedListId);
       window.history.pushState({}, '', newUrl.toString());
@@ -220,7 +218,6 @@ const TasksPage: React.FC = () => {
       return;
     }
 
-    // Confirm before deleting
     if (window.confirm(`Are you sure you want to delete the "${taskLists.find(list => list.id === id)?.name}" list?`)) {
       const updatedLists = taskLists.filter(list => list.id !== id);
       setTaskLists(updatedLists);
@@ -280,7 +277,6 @@ const TasksPage: React.FC = () => {
       setSharedListId(newSharedListId);
       setShowSharedListModal(false);
       
-      // Update URL with shared list ID
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('shared', newSharedListId);
       window.history.pushState({}, '', newUrl.toString());
@@ -312,7 +308,6 @@ const TasksPage: React.FC = () => {
   const handleAcceptInvitation = (listId: string) => {
     setSharedListId(listId);
     
-    // Update URL with shared list ID
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.set('shared', listId);
     window.history.pushState({}, '', newUrl.toString());
@@ -366,7 +361,10 @@ const TasksPage: React.FC = () => {
       </div>
       
       {sharedListId ? (
-        <SharedTaskList sharedListId={sharedListId} currentUserEmail={currentUserEmail} />
+        <SharedTaskList 
+          sharedListId={sharedListId} 
+          currentUserEmail={currentUserEmail} 
+        />
       ) : (
         <>
           <div className="mb-6 glass-card p-3 rounded-lg overflow-x-auto" id="lists-bar">
@@ -389,10 +387,8 @@ const TasksPage: React.FC = () => {
                   <button
                     onClick={() => {
                       if (list.isShared) {
-                        // For shared lists, navigate to the tasks page with the shared list ID
                         setSharedListId(list.id);
                         
-                        // Update URL with shared list ID
                         const newUrl = new URL(window.location.href);
                         newUrl.searchParams.set('shared', list.id);
                         window.history.pushState({}, '', newUrl.toString());
@@ -411,29 +407,29 @@ const TasksPage: React.FC = () => {
                     {list.name} {list.isShared && <Users className="ml-1 h-3 w-3" />}
                   </button>
                   
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute right-0 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
-                      >
-                        <span className="sr-only">Open menu</span>
-                        <span className="h-1 w-1 rounded-full bg-current"></span>
-                        <span className="h-1 w-1 rounded-full bg-current"></span>
-                        <span className="h-1 w-1 rounded-full bg-current"></span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem 
-                        className="text-red-500 focus:text-red-500 flex items-center cursor-pointer"
-                        onClick={() => handleDeleteList(list.id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete List
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 rounded-full p-0"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem 
+                          className="text-red-500 focus:text-red-500 flex items-center cursor-pointer"
+                          onClick={() => handleDeleteList(list.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete List
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               ))}
             </div>

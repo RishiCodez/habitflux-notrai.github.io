@@ -5,9 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Copy } from 'lucide-react';
-import { 
-  updateListAccessType 
-} from '../utils/realtimeDbUtils';
 
 interface CollaborationModalProps {
   isOpen: boolean;

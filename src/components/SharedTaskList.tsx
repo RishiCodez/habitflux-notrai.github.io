@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Share2, RefreshCw, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
@@ -13,11 +12,11 @@ import {
   deleteSharedTask,
   acceptInvitation,
   rejectInvitation,
-  checkListAccess
+  checkListAccess,
+  subscribeToSharedList,
+  unsubscribeFromSharedList
 } from '../utils/realtimeDbUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ref, onValue, off } from 'firebase/database';
-import { database } from '../utils/firebase';
 
 interface SharedTaskListProps {
   sharedListId: string;
@@ -47,37 +46,11 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
   const listRef = useRef<any>(null);
   const { toast } = useToast();
 
-  // Function to subscribe to shared list updates
-  const subscribeToSharedList = (listId: string, callback: (data: any) => void) => {
-    try {
-      if (!database) {
-        console.error('Firebase database is not initialized');
-        return null;
-      }
-      
-      const dbRef = ref(database, `sharedLists/${listId}`);
-      
-      onValue(dbRef, (snapshot) => {
-        const data = snapshot.val();
-        callback(data);
-      });
-      
-      return dbRef;
-    } catch (error) {
-      console.error('Error subscribing to shared list:', error);
-      return null;
-    }
-  };
-
-  // Function to unsubscribe from shared list updates
-  const unsubscribeFromSharedList = (listRef: any) => {
-    if (listRef) {
-      off(listRef);
-    }
-  };
-
   useEffect(() => {
-    if (!sharedListId) return;
+    if (!sharedListId) {
+      setIsLoading(false);
+      return;
+    }
     
     const checkAccess = async () => {
       try {
@@ -116,12 +89,8 @@ const SharedTaskList: React.FC<SharedTaskListProps> = ({
         });
         
         listRef.current = dbRef;
-        
-        return () => {
-          // Clean up subscription
-          unsubscribeFromSharedList(listRef.current);
-        };
       } catch (error) {
+        console.error("Error accessing shared list:", error);
         toast({
           title: "Error accessing shared list",
           description: "There was a problem checking your access to this list",
