@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
-import { CheckCircle, Circle, Clock, Calendar, BarChart3, BookOpen, Edit, Plus } from 'lucide-react';
+import { CheckCircle, Circle, Clock, Calendar, BarChart3, BookOpen, Edit, Plus, ClipboardX } from 'lucide-react';
 import TaskCard, { Task } from '../components/TaskCard';
 import CustomButton from '../components/CustomButton';
 import { useToast } from '@/hooks/use-toast';
@@ -16,23 +16,18 @@ const DashboardPage: React.FC = () => {
   const [todayReflection, setTodayReflection] = useState<any>(null);
   const { toast } = useToast();
   
-  // Load data from local storage on component mount
   useEffect(() => {
-    // Load tasks
     const savedTasks = loadTasks();
     if (savedTasks) {
       setTasks(savedTasks);
     } else {
-      // Initialize with empty array instead of default tasks
       setTasks([]);
       saveTasks([]);
     }
     
-    // Load focus time
     const savedFocusTime = loadFocusTime();
     setFocusTime(savedFocusTime);
     
-    // Load today's reflection if it exists
     const reflections = loadReflections() || [];
     const today = new Date().toISOString().split('T')[0];
     const todaysReflection = reflections.find((r: any) => r.date.split('T')[0] === today);
@@ -41,24 +36,21 @@ const DashboardPage: React.FC = () => {
     }
   }, []);
   
-  // Calculate stats for the dashboard
   const completedTasks = tasks.filter(task => task.completed).length;
   const inProgressTasks = tasks.filter(task => !task.completed).length;
   const focusHours = (focusTime / 60).toFixed(1);
   
-  // Calculate productivity percentage (completed tasks / total tasks * 100)
   const productivityPercentage = tasks.length > 0 
     ? Math.round((completedTasks / tasks.length) * 100) 
     : 0;
   
-  // Function to handle task completion
   const handleCompleteTask = (id: string) => {
     const updatedTasks = tasks.map(task =>
       task.id === id ? { ...task, completed: !task.completed } : task
     );
     
     setTasks(updatedTasks);
-    saveTasks(updatedTasks); // Save to local storage
+    saveTasks(updatedTasks);
     
     toast({
       title: "Task updated",
@@ -66,11 +58,10 @@ const DashboardPage: React.FC = () => {
     });
   };
   
-  // Function to track focus time
   const handleFocusSessionComplete = (minutes: number) => {
     const newFocusTime = focusTime + minutes;
     setFocusTime(newFocusTime);
-    saveFocusTime(minutes); // Save to local storage
+    saveFocusTime(minutes);
     
     toast({
       title: "Focus session completed",
@@ -78,7 +69,6 @@ const DashboardPage: React.FC = () => {
     });
   };
 
-  // Function to handle reflection submission
   const handleReflectionSubmit = (reflection: any) => {
     setTodayReflection(reflection);
     saveReflection(reflection);
@@ -90,7 +80,6 @@ const DashboardPage: React.FC = () => {
     });
   };
   
-  // Stats for the dashboard
   const stats = [
     {
       title: "Tasks Completed",
@@ -118,7 +107,6 @@ const DashboardPage: React.FC = () => {
     }
   ];
   
-  // Get today's date in a readable format
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -133,7 +121,6 @@ const DashboardPage: React.FC = () => {
         <p className="text-muted-foreground">{today}</p>
       </div>
       
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat) => (
           <div key={stat.title} className="glass-card p-4 rounded-xl">
@@ -151,7 +138,6 @@ const DashboardPage: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Tasks For Today */}
         <div className="lg:col-span-2 glass-card p-6 rounded-xl">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Today's Tasks</h2>
@@ -179,13 +165,9 @@ const DashboardPage: React.FC = () => {
                 )}
               </>
             ) : (
-              <div className="text-center py-6">
-                <img 
-                  src="/lovable-uploads/ee69a7fe-8e00-4753-909b-b10210f77674.png" 
-                  alt="Person working at desk" 
-                  className="max-w-full h-auto max-h-48 mx-auto mb-4"
-                />
-                <p className="text-muted-foreground mb-4">No tasks available yet. Add your first task to get started.</p>
+              <div className="text-center py-8">
+                <ClipboardX className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground text-lg font-medium mb-4">No tasks for today</p>
                 <CustomButton onClick={() => window.location.href = '/tasks'}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Your First Task
@@ -195,7 +177,6 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
         
-        {/* Focus Timer */}
         <div>
           <div className="glass-card p-6 rounded-xl mb-6">
             <h2 className="text-xl font-semibold mb-4">Focus Timer</h2>
@@ -206,7 +187,6 @@ const DashboardPage: React.FC = () => {
             />
           </div>
           
-          {/* Daily Reflection */}
           <div className="glass-card p-6 rounded-xl">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
