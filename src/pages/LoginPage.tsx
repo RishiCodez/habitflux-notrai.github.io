@@ -1,11 +1,15 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { AlertCircle } from 'lucide-react';
-import CustomButton from '../components/CustomButton';
+import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const LoginPage: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { continueAsGuest, loading, firebaseInitialized } = useAuth();
 
   const handleContinueAsGuest = async () => {
@@ -17,47 +21,118 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Login functionality would be implemented here
+    console.log('Login attempted with:', email);
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-background/80 p-4">
-      <div className="max-w-md w-full glass-card rounded-xl p-8 shadow-lg">
+      <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Welcome to Notrai Habitflux</h1>
-          <p className="text-muted-foreground mt-2">Track habits, boost productivity</p>
+          <h1 className="text-4xl font-bold mb-2">Welcome Back</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">
+            Log in to your account to continue
+          </p>
         </div>
         
         {firebaseInitialized ? (
-          <div className="space-y-6">
-            <CustomButton 
-              className="w-full" 
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-xl font-medium">
+                Email
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="pl-10 py-6 text-lg rounded-xl border-gray-300 dark:border-gray-700"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label htmlFor="password" className="text-xl font-medium">
+                  Password
+                </label>
+                <Link to="/forgot-password" className="text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pl-10 py-6 text-lg rounded-xl border-gray-300 dark:border-gray-700"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute inset-y-0 right-3 flex items-center"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
+              </div>
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full py-6 text-lg rounded-xl bg-gray-900 dark:bg-primary hover:bg-gray-800 dark:hover:bg-primary/90"
+              disabled={loading}
+            >
+              Log In
+            </Button>
+            
+            <div className="relative flex items-center justify-center my-6">
+              <div className="border-t border-gray-300 dark:border-gray-700 w-full"></div>
+              <span className="bg-white dark:bg-gray-900 px-4 text-gray-500 dark:text-gray-400 text-lg">
+                or
+              </span>
+              <div className="border-t border-gray-300 dark:border-gray-700 w-full"></div>
+            </div>
+            
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2 py-6 text-lg rounded-xl border-gray-300 dark:border-gray-700"
               onClick={handleContinueAsGuest}
               disabled={loading}
             >
-              {loading ? "Loading..." : "Continue as Guest"}
-            </CustomButton>
+              <User className="h-5 w-5" />
+              Continue as Guest
+            </Button>
             
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or sign in with credentials
-                </span>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <Link to="/signup">
-                <CustomButton variant="outline" className="w-full">
-                  Create an Account
-                </CustomButton>
+            <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
+              <span>Don't have an account? </span>
+              <Link to="/signup" className="text-primary font-semibold hover:underline">
+                Sign up
               </Link>
             </div>
-
-            <div className="text-center text-sm text-muted-foreground">
-              <p>By continuing, you agree to our Terms of Service and Privacy Policy.</p>
-            </div>
-          </div>
+          </form>
         ) : (
           <div className="p-4 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded-md">
             <h3 className="font-medium mb-2">Firebase Not Configured</h3>

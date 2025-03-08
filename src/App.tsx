@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +11,7 @@ import PlannerPage from "./pages/PlannerPage";
 import AssistantPage from "./pages/AssistantPage";
 import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useEffect } from "react";
@@ -21,7 +21,6 @@ import './App.css';
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Initialize theme from local storage on app load
   useEffect(() => {
     const darkMode = loadTheme();
     if (darkMode) {
@@ -39,16 +38,16 @@ const App = () => {
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              {/* Redirect from landing page to login */}
               <Route path="/" element={<Navigate replace to="/login" />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
               
-              {/* Protected routes */}
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <DashboardPage />
                 </ProtectedRoute>
               } />
+              
               <Route path="/tasks" element={
                 <ProtectedRoute>
                   <TasksPage />
