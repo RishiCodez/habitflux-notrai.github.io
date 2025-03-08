@@ -34,6 +34,25 @@ const LoginPage: React.FC = () => {
             >
               {loading ? "Loading..." : "Continue as Guest"}
             </CustomButton>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or sign in with credentials
+                </span>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <Link to="/signup">
+                <CustomButton variant="outline" className="w-full">
+                  Create an Account
+                </CustomButton>
+              </Link>
+            </div>
 
             <div className="text-center text-sm text-muted-foreground">
               <p>By continuing, you agree to our Terms of Service and Privacy Policy.</p>

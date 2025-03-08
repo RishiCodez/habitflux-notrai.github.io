@@ -2,16 +2,10 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
-import { Menu, LogOut } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import CustomButton from './CustomButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -19,7 +13,7 @@ interface AppLayoutProps {
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { logout } = useAuth();
+  const { currentUser } = useAuth();
   
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -42,12 +36,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             >
               <Menu className="h-5 w-5" />
             </CustomButton>
-            <h1 className="text-xl font-semibold">Selflo</h1>
+            <h1 className="text-xl font-semibold">Notrai Habitflux</h1>
           </div>
           
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-primary/10 text-primary">
-              U
+              {currentUser?.displayName ? currentUser.displayName[0] : 'U'}
             </AvatarFallback>
           </Avatar>
         </header>

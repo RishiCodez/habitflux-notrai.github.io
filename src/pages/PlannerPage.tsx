@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AppLayout from '../components/AppLayout';
@@ -8,6 +7,13 @@ import { loadEvents, saveEvents, checkEventSetupDone, saveEventSetupDone } from 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchCalendarEvents } from '../utils/googleCalendarUtils';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Event {
   id: string;
@@ -70,7 +76,6 @@ const PlannerPage: React.FC = () => {
   const { toast } = useToast();
   const { currentUser } = useAuth();
   
-  // Load events from local storage on component mount
   useEffect(() => {
     const savedEvents = loadEvents();
     const setupDone = checkEventSetupDone();
@@ -106,6 +111,12 @@ const PlannerPage: React.FC = () => {
   
   const handleToday = () => {
     setCurrentDate(new Date());
+  };
+  
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setCurrentDate(date);
+    }
   };
   
   const getCategoryColors = (category: string) => {
@@ -197,7 +208,6 @@ const PlannerPage: React.FC = () => {
   
   return (
     <AppLayout>
-      {/* First-Time Setup Dialog */}
       {showSetupDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="glass-card rounded-xl p-6 max-w-md w-full mx-4">
@@ -243,9 +253,23 @@ const PlannerPage: React.FC = () => {
           <CustomButton variant="outline" size="sm" onClick={handlePrevDay}>
             <ChevronLeft className="h-4 w-4" />
           </CustomButton>
-          <CustomButton variant="outline" size="sm" onClick={handleToday}>
-            Today
-          </CustomButton>
+          <Popover>
+            <PopoverTrigger asChild>
+              <CustomButton variant="outline" size="sm">
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                {format(currentDate, 'MMM d, yyyy')}
+              </CustomButton>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={currentDate}
+                onSelect={handleDateSelect}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
           <CustomButton variant="outline" size="sm" onClick={handleNextDay}>
             <ChevronRight className="h-4 w-4" />
           </CustomButton>

@@ -2,6 +2,30 @@
 import React from 'react';
 import AppLayout from '../components/AppLayout';
 
+// Create a wrapper component for the ElevenLabs widget to fix TypeScript errors
+const ElevenLabsConvai: React.FC = () => {
+  React.useEffect(() => {
+    // Dynamically load the ElevenLabs script
+    const script = document.createElement('script');
+    script.src = 'https://elevenlabs.io/convai-widget/index.js';
+    script.async = true;
+    document.body.appendChild(script);
+    
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // Use div with ref to mount the ElevenLabs widget
+  return (
+    <div
+      dangerouslySetInnerHTML={{
+        __html: '<elevenlabs-convai agent-id="F0hJ2fffnyCQpia2K92E"></elevenlabs-convai>'
+      }}
+    />
+  );
+};
+
 const AssistantPage: React.FC = () => {
   return (
     <AppLayout>
@@ -18,6 +42,7 @@ const AssistantPage: React.FC = () => {
               width="100%"
               style={{ height: '100%', minHeight: '700px' }}
               frameBorder="0"
+              title="Noya AI Chatbot"
             ></iframe>
           </div>
           
@@ -27,8 +52,7 @@ const AssistantPage: React.FC = () => {
             <p className="text-sm text-muted-foreground mb-4">Talk to Noya with your voice</p>
             
             <div className="w-full h-72 border rounded-lg overflow-hidden">
-              <elevenlabs-convai agent-id="F0hJ2fffnyCQpia2K92E"></elevenlabs-convai>
-              <script src="https://elevenlabs.io/convai-widget/index.js" async type="text/javascript"></script>
+              <ElevenLabsConvai />
             </div>
           </div>
         </div>
