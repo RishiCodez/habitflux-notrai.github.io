@@ -12,7 +12,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const navItems = [
-    { name: 'Dashboard', icon: Home, path: '/dashboard' }, // Changed from '/' to '/dashboard'
+    { name: 'Dashboard', icon: Home, path: '/dashboard' },
     { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
     { name: 'Pomodoro', icon: Clock, path: '/pomodoro' },
     { name: 'Planner', icon: Calendar, path: '/planner' },
@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         )}
       >
         <div className="flex items-center justify-between h-14 px-4 border-b">
-          <h1 className="text-xl font-semibold">Selflo</h1>
+          <h1 className="text-xl font-semibold">Notrai Habitflux</h1>
           <CustomButton 
             variant="ghost" 
             size="sm"

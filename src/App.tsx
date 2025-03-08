@@ -11,9 +11,7 @@ import PomodoroPage from "./pages/PomodoroPage";
 import PlannerPage from "./pages/PlannerPage";
 import AssistantPage from "./pages/AssistantPage";
 import SettingsPage from "./pages/SettingsPage";
-import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useEffect } from "react";
@@ -41,9 +39,9 @@ const App = () => {
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              <Route path="/" element={<LandingPage />} />
+              {/* Redirect from landing page to login */}
+              <Route path="/" element={<Navigate replace to="/login" />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
               
               {/* Protected routes */}
               <Route path="/dashboard" element={

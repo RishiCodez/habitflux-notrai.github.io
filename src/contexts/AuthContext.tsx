@@ -2,32 +2,21 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup
-} from 'firebase/auth';
-import { checkFirstVisit } from '../utils/localStorageUtils';
-import { app, auth } from '../utils/firebase';
-
-const googleProvider = new GoogleAuthProvider();
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../utils/firebase';
 
 interface User {
   displayName?: string;
   email?: string;
   uid: string;
   photoURL?: string;
+  isGuest?: boolean;
 }
 
 interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  continueAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   firebaseInitialized: boolean;
 }
@@ -45,7 +34,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [firebaseInitialized, setFirebaseInitialized] = useState(!!app);
+  const [firebaseInitialized, setFirebaseInitialized] = useState(!!auth);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,60 +60,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const login = async (email: string, password: string) => {
-    if (!auth) {
-      toast.error('Firebase not initialized. Check your environment variables.');
-      return Promise.reject(new Error('Firebase not initialized'));
-    }
-    
+  const continueAsGuest = async () => {
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
+      // Create a guest user object
+      const guestUser: User = {
+        uid: `guest-${Date.now()}`,
+        displayName: "Guest User",
+        isGuest: true
+      };
+      
+      setCurrentUser(guestUser);
       navigate('/dashboard');
-      toast.success('Logged in successfully');
+      toast.success('Continuing as guest');
     } catch (error) {
-      console.error('Login failed:', error);
-      toast.error('Login failed. Please check your credentials.');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signup = async (email: string, password: string) => {
-    if (!auth) {
-      toast.error('Firebase not initialized. Check your environment variables.');
-      return Promise.reject(new Error('Firebase not initialized'));
-    }
-    
-    try {
-      setLoading(true);
-      await createUserWithEmailAndPassword(auth, email, password);
-      navigate('/dashboard');
-      toast.success('Account created successfully');
-    } catch (error) {
-      console.error('Signup failed:', error);
-      toast.error('Signup failed. Please try again.');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loginWithGoogle = async () => {
-    if (!auth) {
-      toast.error('Firebase not initialized. Check your environment variables.');
-      return Promise.reject(new Error('Firebase not initialized'));
-    }
-    
-    try {
-      setLoading(true);
-      await signInWithPopup(auth, googleProvider);
-      navigate('/dashboard');
-      toast.success('Logged in with Google successfully');
-    } catch (error) {
-      console.error('Google login failed:', error);
-      toast.error('Google login failed. Please try again.');
+      console.error('Failed to continue as guest:', error);
+      toast.error('Failed to continue as guest');
       throw error;
     } finally {
       setLoading(false);
@@ -135,8 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      if (auth) {
-        await signOut(auth);
+      if (auth && currentUser && !currentUser.isGuest) {
+        await auth.signOut();
       }
       
       setCurrentUser(null);
@@ -154,9 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     currentUser,
     loading,
-    login,
-    signup,
-    loginWithGoogle,
+    continueAsGuest,
     logout,
     firebaseInitialized
   };

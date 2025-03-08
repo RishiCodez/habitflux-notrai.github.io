@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { currentUser, loading, firebaseInitialized } = useAuth();
+  const { currentUser, loading } = useAuth();
 
   if (loading) {
     // Show loading spinner or skeleton while checking auth status
@@ -24,7 +24,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <>{children}</>;
   }
   
-  // Redirect to login page
+  // Redirect to login page if not authenticated
   return <Navigate to="/login" />;
 };
 
