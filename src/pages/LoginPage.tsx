@@ -14,9 +14,11 @@ const LoginPage: React.FC = () => {
 
   const handleContinueAsGuest = async () => {
     try {
+      console.log("Continue as guest clicked");
       await continueAsGuest();
       // Success toast is shown in the continueAsGuest function
     } catch (error) {
+      console.error("Error in guest login:", error);
       // Error handling is done in the continueAsGuest function
     }
   };
