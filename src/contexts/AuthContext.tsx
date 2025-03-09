@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -69,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .then((result) => {
           if (result?.user) {
             // User successfully signed in with redirect
-            navigate('/dashboard');
+            navigate('/dashboard', { replace: true });
             toast.success('Signed in with Google successfully');
           }
         })
@@ -95,6 +96,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       const provider = new GoogleAuthProvider();
       
+      // Add scopes if needed
+      provider.addScope('https://www.googleapis.com/auth/userinfo.email');
+      provider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+      
       // Use popup for desktop and redirect for mobile
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
@@ -104,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         const result = await signInWithPopup(auth, provider);
         if (result.user) {
-          navigate('/dashboard');
+          navigate('/dashboard', { replace: true });
           toast.success('Signed in with Google successfully');
         }
       }
@@ -113,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Don't show error for user closing the popup
       if (error.code !== 'auth/popup-closed-by-user') {
-        toast.error('Failed to sign in with Google');
+        toast.error(`Failed to sign in with Google: ${error.message}`);
       }
     } finally {
       setLoading(false);
@@ -131,14 +136,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       
       setCurrentUser(guestUser);
-      // Force navigation to dashboard
+      
+      // Force navigation to dashboard with replace: true to prevent back navigation
       console.log("Continuing as guest, navigating to dashboard");
-      navigate('/dashboard', { replace: true });
-      toast.success('Continuing as guest');
+      
+      // Add a small delay to ensure the state is updated before navigation
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+        toast.success('Continuing as guest');
+        setLoading(false);
+      }, 100);
+      
     } catch (error) {
       console.error('Failed to continue as guest:', error);
       toast.error('Failed to continue as guest');
-    } finally {
       setLoading(false);
     }
   };
@@ -152,7 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       setCurrentUser(null);
-      navigate('/');
+      navigate('/', { replace: true });
       toast.success('Logged out successfully');
     } catch (error) {
       console.error('Logout failed:', error);

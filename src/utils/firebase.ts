@@ -12,6 +12,7 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase only if we have the required configuration
@@ -19,23 +20,37 @@ let app: FirebaseApp | null = null;
 let auth = null;
 let database: Database | null = null;
 
-if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.databaseURL) {
+// Validate Firebase configuration
+const isFirebaseConfigValid = () => {
+  const requiredFields = ['apiKey', 'authDomain', 'projectId', 'appId'];
+  const missingFields = requiredFields.filter(field => !firebaseConfig[field as keyof typeof firebaseConfig]);
+  
+  if (missingFields.length > 0) {
+    console.error(`Missing required Firebase configuration: ${missingFields.join(', ')}`);
+    return false;
+  }
+  return true;
+};
+
+if (isFirebaseConfigValid()) {
   try {
     // Initialize Firebase only once
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    database = getDatabase(app);
-    console.log("Firebase initialized successfully with project:", firebaseConfig.projectId);
-    console.log("Realtime Database URL:", firebaseConfig.databaseURL);
+    
+    // Only initialize database if databaseURL is provided
+    if (firebaseConfig.databaseURL) {
+      database = getDatabase(app);
+      console.log("Firebase initialized successfully with project:", firebaseConfig.projectId);
+      console.log("Realtime Database URL:", firebaseConfig.databaseURL);
+    } else {
+      console.warn('Missing VITE_FIREBASE_DATABASE_URL environment variable. Realtime Database will not be available.');
+    }
   } catch (error) {
     console.error("Firebase initialization error:", error);
   }
 } else {
   console.warn('Firebase configuration is missing or incomplete. Firebase features will be disabled.');
-  
-  if (!firebaseConfig.databaseURL) {
-    console.error('Missing VITE_FIREBASE_DATABASE_URL environment variable. Realtime Database will not work.');
-  }
 }
 
 export { app, auth, database };

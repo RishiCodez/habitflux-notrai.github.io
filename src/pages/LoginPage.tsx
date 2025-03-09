@@ -1,34 +1,44 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const { continueAsGuest, signInWithGoogle, loading, firebaseInitialized } = useAuth();
+
+  // Clear any error messages when component mounts
+  useEffect(() => {
+    setAuthError(null);
+  }, []);
 
   const handleContinueAsGuest = async () => {
     try {
+      setAuthError(null);
       console.log("Continue as guest clicked");
       await continueAsGuest();
-      // Success toast is shown in the continueAsGuest function
     } catch (error) {
       console.error("Error in guest login:", error);
-      // Error handling is done in the continueAsGuest function
+      setAuthError("Failed to continue as guest. Please try again.");
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
+      setAuthError(null);
       await signInWithGoogle();
-      // Success toast is shown in the signInWithGoogle function
-    } catch (error) {
-      // Error handling is done in the signInWithGoogle function
+    } catch (error: any) {
+      console.error("Error in Google sign-in:", error);
+      if (error.code !== 'auth/popup-closed-by-user') {
+        setAuthError(error.message || "Failed to sign in with Google. Please try again.");
+      }
     }
   };
 
@@ -51,6 +61,13 @@ const LoginPage: React.FC = () => {
             Log in to your account to continue
           </p>
         </div>
+        
+        {authError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{authError}</AlertDescription>
+          </Alert>
+        )}
         
         {firebaseInitialized ? (
           <form onSubmit={handleLogin} className="space-y-6">
