@@ -2,7 +2,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { onAuthStateChanged } from 'firebase/auth';
+import { 
+  onAuthStateChanged, 
+  GoogleAuthProvider, 
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult
+} from 'firebase/auth';
 import { auth } from '../utils/firebase';
 
 interface User {
@@ -17,6 +23,7 @@ interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
   continueAsGuest: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   firebaseInitialized: boolean;
 }
@@ -57,8 +64,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
+    // Check for redirect result when the component mounts
+    if (auth) {
+      getRedirectResult(auth)
+        .then((result) => {
+          if (result?.user) {
+            // User successfully signed in with redirect
+            navigate('/dashboard');
+            toast.success('Signed in with Google successfully');
+          }
+        })
+        .catch((error) => {
+          console.error('Error with redirect sign-in:', error);
+          // Only show error toast if it's not a popup closed error
+          if (error.code !== 'auth/popup-closed-by-user') {
+            toast.error('Failed to sign in with Google');
+          }
+        });
+    }
+
     return unsubscribe;
-  }, []);
+  }, [navigate]);
+
+  const signInWithGoogle = async () => {
+    try {
+      if (!auth) {
+        toast.error('Firebase is not initialized');
+        return;
+      }
+
+      setLoading(true);
+      const provider = new GoogleAuthProvider();
+      
+      // Use popup for desktop and redirect for mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        await signInWithRedirect(auth, provider);
+        // The result will be handled in the useEffect hook
+      } else {
+        const result = await signInWithPopup(auth, provider);
+        if (result.user) {
+          navigate('/dashboard');
+          toast.success('Signed in with Google successfully');
+        }
+      }
+    } catch (error: any) {
+      console.error('Google sign-in failed:', error);
+      
+      // Don't show error for user closing the popup
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast.error('Failed to sign in with Google');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const continueAsGuest = async () => {
     try {
@@ -106,6 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     currentUser,
     loading,
     continueAsGuest,
+    signInWithGoogle,
     logout,
     firebaseInitialized
   };
