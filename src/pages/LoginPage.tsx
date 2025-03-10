@@ -57,6 +57,7 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-2">Welcome Back</h1>
+          <h2 className="text-2xl font-semibold text-primary mb-2">to Notrai Habitflux</h2>
           <p className="text-gray-500 dark:text-gray-400 text-lg">
             Log in to your account to continue
           </p>

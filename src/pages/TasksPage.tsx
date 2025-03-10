@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, Search, Users, Share2, Trash2, MoreHorizontal, FolderPlus, CheckSquare } from 'lucide-react';
+import { Plus, Search, Users, Share2, Trash2, MoreHorizontal, FolderPlus, CheckSquare, ClipboardX } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import TaskCard, { Task } from '../components/TaskCard';
 import TaskForm from '../components/TaskForm';
@@ -565,11 +565,7 @@ const TasksPage: React.FC = () => {
             ) : (
               <div className="glass-card p-8 rounded-xl text-center">
                 <div className="flex flex-col items-center justify-center">
-                  <img 
-                    src="/lovable-uploads/ee69a7fe-8e00-4753-909b-b10210f77674.png" 
-                    alt="Person working at desk" 
-                    className="max-w-full h-auto max-h-64 mb-6"
-                  />
+                  <ClipboardX className="h-24 w-24 text-muted-foreground mb-6" />
                   <h3 className="text-lg font-medium">No tasks found</h3>
                   <p className="text-muted-foreground">
                     {searchQuery || filter !== 'all' || projectFilter || priorityFilter || listFilter
