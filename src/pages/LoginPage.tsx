@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, Eye, EyeOff, User, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -12,18 +12,27 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const { continueAsGuest, signInWithGoogle, loading, firebaseInitialized } = useAuth();
+  const { continueAsGuest, signInWithGoogle, loading, firebaseInitialized, currentUser } = useAuth();
+  const navigate = useNavigate();
 
   // Clear any error messages when component mounts
   useEffect(() => {
     setAuthError(null);
   }, []);
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
 
   const handleContinueAsGuest = async () => {
     try {
       setAuthError(null);
       console.log("Continue as guest clicked");
       await continueAsGuest();
+      // Navigation will be handled in the AuthProvider after the continueAsGuest function completes
     } catch (error) {
       console.error("Error in guest login:", error);
       setAuthError("Failed to continue as guest. Please try again.");
@@ -34,6 +43,7 @@ const LoginPage: React.FC = () => {
     try {
       setAuthError(null);
       await signInWithGoogle();
+      // Navigation will be handled in the AuthProvider
     } catch (error: any) {
       console.error("Error in Google sign-in:", error);
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -169,6 +179,7 @@ const LoginPage: React.FC = () => {
             >
               <User className="h-5 w-5" />
               Continue as Guest
+              <span className="ml-1 text-xs text-gray-500">(limited access)</span>
             </Button>
             
             <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
