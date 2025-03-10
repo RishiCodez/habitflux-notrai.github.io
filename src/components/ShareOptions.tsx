@@ -27,13 +27,16 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
 
   const getTaskListText = () => {
     if (isSharedList) {
-      return `Join my shared todo list: "${listName}"\n${sharedListLink}\nCreated by Selflo.app`;
+      // Format the shareable link message with the new domain format
+      const listId = sharedListLink?.split('shared=')[1] || '';
+      const formattedLink = `habitflux.notrai.cloud/${listId}`;
+      return `Join my shared todo list: "${listName}"\n${formattedLink}\nCreated with Notrai Habitflux`;
     } else {
       let text = `Hi! My todo list: "${listName}"\n`;
       taskList.forEach((task, index) => {
         text += `${index + 1}. ${task.title}\n`;
       });
-      text += "\nI created this using Selflo.app";
+      text += "\nI created this using Notrai Habitflux";
       return text;
     }
   };

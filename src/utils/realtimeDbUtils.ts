@@ -431,11 +431,23 @@ export const getInvitationsForUser = async (userEmail: string): Promise<any[]> =
 };
 
 export const generateShareableLink = (listId: string) => {
-  // Create a shareable link that includes the list ID with the full origin URL
-  return `${window.location.origin}/tasks?shared=${listId}`;
+  // Use the new domain format for sharing links
+  return `habitflux.notrai.cloud/${listId}`;
 };
 
 export const getSharedListIdFromUrl = () => {
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('shared');
+  const sharedParam = urlParams.get('shared');
+  
+  if (sharedParam) {
+    return sharedParam;
+  }
+  
+  // Also check if we're using the new URL format (habitflux.notrai.cloud/listId)
+  const pathParts = window.location.pathname.split('/');
+  if (pathParts.length > 1 && pathParts[1]) {
+    return pathParts[1];
+  }
+  
+  return null;
 };

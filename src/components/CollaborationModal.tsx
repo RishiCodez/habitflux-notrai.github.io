@@ -42,8 +42,8 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
   };
 
   const generateShareableLink = (listId: string) => {
-    // Create a shareable link with the full origin to prevent 404 errors
-    return `${window.location.origin}/tasks?shared=${listId}`;
+    // Use the new domain format for sharing links
+    return `habitflux.notrai.cloud/${listId}`;
   };
 
   return (

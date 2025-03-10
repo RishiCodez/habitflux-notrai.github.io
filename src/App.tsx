@@ -61,6 +61,13 @@ const App: React.FC = () => {
             </ProtectedRoute>
           } />
           
+          {/* New route for direct shared list access */}
+          <Route path="/:listId" element={
+            <ProtectedRoute>
+              <TasksPage />
+            </ProtectedRoute>
+          } />
+          
           {/* Fallback routes */}
           <Route path="*" element={<NotFound />} />
         </Routes>
