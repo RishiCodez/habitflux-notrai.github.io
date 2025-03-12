@@ -7,7 +7,8 @@ import {
   GoogleAuthProvider, 
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult
+  getRedirectResult,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from '../utils/firebase';
 
@@ -24,6 +25,7 @@ interface AuthContextType {
   loading: boolean;
   continueAsGuest: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   firebaseInitialized: boolean;
 }
@@ -149,6 +151,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resetPassword = async (email: string) => {
+    if (!auth) {
+      throw new Error('Firebase is not initialized');
+    }
+    await sendPasswordResetEmail(auth, email);
+  };
+
   const logout = async () => {
     try {
       setLoading(true);
@@ -158,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       setCurrentUser(null);
-      navigate('/', { replace: true });
+      navigate('/login', { replace: true });
       toast.success('Logged out successfully');
     } catch (error) {
       console.error('Logout failed:', error);
@@ -174,6 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     continueAsGuest,
     signInWithGoogle,
+    resetPassword,
     logout,
     firebaseInitialized
   };
