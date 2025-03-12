@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,12 +14,10 @@ const LoginPage: React.FC = () => {
   const { continueAsGuest, signInWithGoogle, loading, firebaseInitialized, currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Clear any error messages when component mounts
   useEffect(() => {
     setAuthError(null);
   }, []);
   
-  // Redirect if already logged in
   useEffect(() => {
     if (currentUser) {
       navigate('/dashboard');
