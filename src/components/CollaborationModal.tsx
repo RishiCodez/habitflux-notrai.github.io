@@ -42,8 +42,8 @@ const CollaborationModal: React.FC<CollaborationModalProps> = ({
   };
 
   const generateShareableLink = (listId: string) => {
-    // Use the new domain format for sharing links
-    return `habitflux.notrai.cloud/${listId}`;
+    // Use notrai.cloud domain format for sharing links
+    return `https://notrai.cloud/${listId}`;
   };
 
   return (

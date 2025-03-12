@@ -137,19 +137,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setCurrentUser(guestUser);
       
-      // Force navigation to dashboard with replace: true to prevent back navigation
-      console.log("Continuing as guest, navigating to dashboard");
-      
-      // Add a small delay to ensure the state is updated before navigation
-      setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-        toast.success('Continuing as guest');
-        setLoading(false);
-      }, 100);
+      // Immediately navigate to the pomodoro page for guest users
+      navigate('/pomodoro', { replace: true });
+      toast.success('Continuing as guest - you have access to the Pomodoro timer');
       
     } catch (error) {
       console.error('Failed to continue as guest:', error);
       toast.error('Failed to continue as guest');
+    } finally {
       setLoading(false);
     }
   };

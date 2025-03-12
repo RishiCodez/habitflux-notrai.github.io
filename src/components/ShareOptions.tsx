@@ -27,9 +27,9 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
 
   const getTaskListText = () => {
     if (isSharedList) {
-      // Format the shareable link message with the new domain format
-      const listId = sharedListLink?.split('shared=')[1] || '';
-      const formattedLink = `habitflux.notrai.cloud/${listId}`;
+      // Format for shared lists using notrai.cloud domain
+      const listId = sharedListLink?.split('/').pop() || '';
+      const formattedLink = `https://notrai.cloud/${listId}`;
       return `Join my shared todo list: "${listName}"\n${formattedLink}\nCreated with Notrai Habitflux`;
     } else {
       let text = `Hi! My todo list: "${listName}"\n`;

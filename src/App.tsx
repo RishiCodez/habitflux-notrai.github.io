@@ -60,7 +60,7 @@ const App: React.FC = () => {
             </ProtectedRoute>
           } />
           
-          {/* New route for direct shared list access */}
+          {/* Direct access to shared lists via URL path (/:listId) */}
           <Route path="/:listId" element={
             <ProtectedRoute>
               <TasksPage />
