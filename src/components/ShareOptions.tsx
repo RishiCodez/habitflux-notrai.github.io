@@ -25,12 +25,20 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
   const [isCopied, setIsCopied] = useState(false);
   const { toast } = useToast();
 
+  const getShareableLink = () => {
+    if (isSharedList && sharedListLink) {
+      // Extract list ID from the URL
+      const listId = sharedListLink?.split('/').pop() || '';
+      return `https://notrai.cloud/${listId}`;
+    }
+    return '';
+  };
+
   const getTaskListText = () => {
     if (isSharedList) {
-      // Format for shared lists using notrai.cloud domain
-      const listId = sharedListLink?.split('/').pop() || '';
-      const formattedLink = `https://notrai.cloud/${listId}`;
-      return `Join my shared todo list: "${listName}"\n${formattedLink}\nCreated with Notrai Habitflux`;
+      // For shared lists, just return the link
+      const shareableLink = getShareableLink();
+      return `Join my shared todo list: "${listName}"\n${shareableLink}\nCreated with Notrai Habitflux`;
     } else {
       let text = `Hi! My todo list: "${listName}"\n`;
       taskList.forEach((task, index) => {
@@ -42,12 +50,20 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
   };
 
   const handleCopyToClipboard = () => {
-    const text = getTaskListText();
-    navigator.clipboard.writeText(text);
+    if (isSharedList) {
+      // For shared lists, copy only the link
+      const shareableLink = getShareableLink();
+      navigator.clipboard.writeText(shareableLink);
+    } else {
+      // For regular lists, copy the task list text
+      const text = getTaskListText();
+      navigator.clipboard.writeText(text);
+    }
+    
     setIsCopied(true);
     toast({
       title: "Copied to clipboard",
-      description: "The task list has been copied to your clipboard",
+      description: isSharedList ? "Shareable link copied to clipboard" : "The task list has been copied to your clipboard",
     });
     
     setTimeout(() => setIsCopied(false), 2000);
@@ -94,7 +110,7 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
               onClick={handleCopyToClipboard}
             >
               <Copy className="mr-2 h-4 w-4" />
-              {isCopied ? "Copied!" : "Copy to clipboard"}
+              {isCopied ? "Copied!" : isSharedList ? "Copy shareable link" : "Copy to clipboard"}
             </Button>
             
             {!isSharedList && (
