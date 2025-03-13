@@ -38,13 +38,13 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
     if (isSharedList) {
       // For shared lists, just return the link
       const shareableLink = getShareableLink();
-      return `Join my shared todo list: "${listName}"\n${shareableLink}\nCreated with Notrai Habitflux`;
+      return `Join my shared todo list: "${listName}"\n${shareableLink}\nCreated with Habitflux`;
     } else {
       let text = `Hi! My todo list: "${listName}"\n`;
       taskList.forEach((task, index) => {
         text += `${index + 1}. ${task.title}\n`;
       });
-      text += "\nI created this using Notrai Habitflux";
+      text += "\nI created this using Habitflux";
       return text;
     }
   };
