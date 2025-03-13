@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,7 +21,12 @@ const LoginPage: React.FC = () => {
   
   useEffect(() => {
     if (currentUser) {
-      navigate('/dashboard');
+      // Redirect authenticated users to the appropriate page
+      if (currentUser.isGuest) {
+        navigate('/pomodoro');
+      } else {
+        navigate('/dashboard');
+      }
     }
   }, [currentUser, navigate]);
 
@@ -29,7 +35,7 @@ const LoginPage: React.FC = () => {
       setAuthError(null);
       console.log("Continue as guest clicked");
       await continueAsGuest();
-      // Navigation will be handled in the AuthProvider after the continueAsGuest function completes
+      // continueAsGuest now handles the navigation
     } catch (error) {
       console.error("Error in guest login:", error);
       setAuthError("Failed to continue as guest. Please try again.");
@@ -40,7 +46,7 @@ const LoginPage: React.FC = () => {
     try {
       setAuthError(null);
       await signInWithGoogle();
-      // Navigation will be handled in the AuthProvider
+      // Navigation is handled in the AuthProvider
     } catch (error: any) {
       console.error("Error in Google sign-in:", error);
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -176,7 +182,7 @@ const LoginPage: React.FC = () => {
             >
               <User className="h-5 w-5" />
               Continue as Guest
-              <span className="ml-1 text-xs text-gray-500">(limited access)</span>
+              <span className="ml-1 text-xs text-gray-500">(Pomodoro access only)</span>
             </Button>
             
             <div className="text-center text-gray-500 dark:text-gray-400 mt-8">

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -66,19 +65,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    // Check for redirect result when the component mounts
     if (auth) {
       getRedirectResult(auth)
         .then((result) => {
           if (result?.user) {
-            // User successfully signed in with redirect
             navigate('/dashboard', { replace: true });
             toast.success('Signed in with Google successfully');
           }
         })
         .catch((error) => {
           console.error('Error with redirect sign-in:', error);
-          // Only show error toast if it's not a popup closed error
           if (error.code !== 'auth/popup-closed-by-user') {
             toast.error('Failed to sign in with Google');
           }
@@ -98,16 +94,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       const provider = new GoogleAuthProvider();
       
-      // Add scopes if needed
       provider.addScope('https://www.googleapis.com/auth/userinfo.email');
       provider.addScope('https://www.googleapis.com/auth/userinfo.profile');
       
-      // Use popup for desktop and redirect for mobile
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
       if (isMobile) {
         await signInWithRedirect(auth, provider);
-        // The result will be handled in the useEffect hook
       } else {
         const result = await signInWithPopup(auth, provider);
         if (result.user) {
@@ -118,7 +111,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       console.error('Google sign-in failed:', error);
       
-      // Don't show error for user closing the popup
       if (error.code !== 'auth/popup-closed-by-user') {
         toast.error(`Failed to sign in with Google: ${error.message}`);
       }
@@ -130,18 +122,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const continueAsGuest = async () => {
     try {
       setLoading(true);
-      // Create a guest user object
+      
       const guestUser: User = {
-        uid: `guest-${Date.now()}`,
+        uid: `guest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         displayName: "Guest User",
         isGuest: true
       };
       
       setCurrentUser(guestUser);
       
-      // Immediately navigate to the pomodoro page for guest users
+      localStorage.setItem('guestUser', JSON.stringify(guestUser));
+      
+      toast.success('You have access to the Pomodoro timer as a guest user');
+      
       navigate('/pomodoro', { replace: true });
-      toast.success('Continuing as guest - you have access to the Pomodoro timer');
       
     } catch (error) {
       console.error('Failed to continue as guest:', error);
@@ -177,6 +171,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    try {
+      const storedGuestUser = localStorage.getItem('guestUser');
+      
+      if (storedGuestUser && !currentUser) {
+        const guestUser = JSON.parse(storedGuestUser);
+        if (guestUser && guestUser.isGuest) {
+          setCurrentUser(guestUser);
+        }
+      }
+    } catch (error) {
+      console.error('Error retrieving guest user from localStorage:', error);
+    }
+  }, [currentUser]);
 
   const value = {
     currentUser,

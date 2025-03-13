@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
@@ -13,6 +13,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, guestAllowed 
   const { currentUser, loading } = useAuth();
   const location = useLocation();
 
+  // Show notification for guest users trying to access restricted pages
+  useEffect(() => {
+    if (currentUser?.isGuest && !guestAllowed && location.pathname !== '/pomodoro') {
+      toast.error('This feature requires signing in. Guest users only have access to the Pomodoro timer.');
+    }
+  }, [currentUser, guestAllowed, location.pathname]);
+
   if (loading) {
     // Show loading spinner or skeleton while checking auth status
     return (
@@ -22,7 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, guestAllowed 
     );
   }
   
-  // Check if the user is logged in
+  // Check if the user is logged in (including as guest)
   if (!currentUser) {
     return <Navigate to="/login" />;
   }
@@ -33,8 +40,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, guestAllowed 
   }
   
   // If user is a guest and the route doesn't allow guests, redirect to pomodoro
-  toast.error("This feature requires signing in with Google. Guest users only have access to the Pomodoro timer.");
-  return <Navigate to="/pomodoro" />;
+  return <Navigate to="/pomodoro" replace />;
 };
 
 export default ProtectedRoute;
