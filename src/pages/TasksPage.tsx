@@ -30,7 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 
 interface TaskList {
   id: string;
@@ -70,6 +70,7 @@ const TasksPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const params = useParams();
 
   const loadInitialData = useCallback(async () => {
     const savedTasks = loadTasks();
@@ -93,9 +94,15 @@ const TasksPage: React.FC = () => {
       setShowTour(true);
     }
     
+    if (params.listId) {
+      console.log("Found shared list ID in URL params:", params.listId);
+      setSharedListId(params.listId);
+      return;
+    }
+    
     const urlSharedListId = getSharedListIdFromUrl();
     if (urlSharedListId) {
-      console.log("Found shared list ID in URL:", urlSharedListId);
+      console.log("Found shared list ID in URL query:", urlSharedListId);
       setSharedListId(urlSharedListId);
     } else if (location.state?.sharedListId) {
       console.log("Found shared list ID in location state:", location.state.sharedListId);
@@ -105,7 +112,7 @@ const TasksPage: React.FC = () => {
       newUrl.searchParams.set('shared', location.state.sharedListId);
       window.history.pushState({}, '', newUrl.toString());
     }
-  }, [location]);
+  }, [location, params]);
 
   useEffect(() => {
     loadInitialData();

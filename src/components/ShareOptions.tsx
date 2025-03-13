@@ -29,7 +29,7 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
     if (isSharedList && sharedListLink) {
       // Extract list ID from the URL
       const listId = sharedListLink?.split('/').pop() || '';
-      return `https://notrai.cloud/${listId}`;
+      return `https://habitflux.notrai.cloud/${listId}`;
     }
     return '';
   };

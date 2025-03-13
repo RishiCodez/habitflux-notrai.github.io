@@ -2,7 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { NavLink } from 'react-router-dom';
-import { Home, CheckSquare, Clock, Calendar, MessageSquare, Settings, X, Lock } from 'lucide-react';
+import { Home, CheckSquare, Clock, Calendar, MessageSquare, Settings, X, Lock, BookOpen } from 'lucide-react';
 import CustomButton from './CustomButton';
 import { useAuth } from '../contexts/AuthContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -21,6 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { name: 'Tasks', icon: CheckSquare, path: '/tasks', guestRestricted: true },
     { name: 'Pomodoro', icon: Clock, path: '/pomodoro', guestRestricted: false },
     { name: 'Planner', icon: Calendar, path: '/planner', guestRestricted: true },
+    { name: 'Reflections', icon: BookOpen, path: '/reflections', guestRestricted: true },
     { name: 'Assistant', icon: MessageSquare, path: '/assistant', guestRestricted: true },
     { name: 'Settings', icon: Settings, path: '/settings', guestRestricted: true },
   ];

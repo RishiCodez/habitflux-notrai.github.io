@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import PomodoroTimer from '../components/PomodoroTimer';
 import { loadTasks, saveTasks, loadFocusTime, saveFocusTime, loadReflections, saveReflection } from '../utils/localStorageUtils';
 import ReflectionForm from '../components/ReflectionForm';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -15,6 +16,7 @@ const DashboardPage: React.FC = () => {
   const [showReflectionForm, setShowReflectionForm] = useState(false);
   const [todayReflection, setTodayReflection] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   useEffect(() => {
     const savedTasks = loadTasks();
@@ -58,6 +60,17 @@ const DashboardPage: React.FC = () => {
     });
   };
   
+  const handleDeleteTask = (id: string) => {
+    const updatedTasks = tasks.filter(task => task.id !== id);
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+    
+    toast({
+      title: "Task deleted",
+      description: "Your task has been successfully removed.",
+    });
+  };
+  
   const handleFocusSessionComplete = (minutes: number) => {
     const newFocusTime = focusTime + minutes;
     setFocusTime(newFocusTime);
@@ -78,6 +91,10 @@ const DashboardPage: React.FC = () => {
       title: "Reflection saved",
       description: "Your daily reflection has been saved.",
     });
+  };
+  
+  const handleViewReflectionsLibrary = () => {
+    navigate('/reflections');
   };
   
   const stats = [
@@ -154,12 +171,12 @@ const DashboardPage: React.FC = () => {
                     key={task.id}
                     task={task}
                     onComplete={handleCompleteTask}
-                    onDelete={() => {}}
-                    onEdit={() => {}}
+                    onDelete={handleDeleteTask}
+                    onEdit={() => navigate('/tasks')}
                   />
                 ))}
                 {tasks.length > 4 && (
-                  <CustomButton className="w-full" variant="outline" onClick={() => window.location.href = '/tasks'}>
+                  <CustomButton className="w-full" variant="outline" onClick={() => navigate('/tasks')}>
                     View All Tasks
                   </CustomButton>
                 )}
@@ -168,7 +185,7 @@ const DashboardPage: React.FC = () => {
               <div className="text-center py-8">
                 <ClipboardX className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground text-lg font-medium mb-4">No tasks for today</p>
-                <CustomButton onClick={() => window.location.href = '/tasks'}>
+                <CustomButton onClick={() => navigate('/tasks')}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Your First Task
                 </CustomButton>
@@ -193,12 +210,18 @@ const DashboardPage: React.FC = () => {
                 <BookOpen className="h-5 w-5 text-primary" />
                 <h2 className="text-xl font-semibold">Daily Reflection</h2>
               </div>
-              {todayReflection && (
-                <CustomButton variant="outline" size="sm" onClick={() => setShowReflectionForm(true)}>
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
+              <div className="flex space-x-2">
+                {todayReflection && (
+                  <CustomButton variant="outline" size="sm" onClick={() => setShowReflectionForm(true)}>
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </CustomButton>
+                )}
+                <CustomButton variant="outline" size="sm" onClick={handleViewReflectionsLibrary}>
+                  <BookOpen className="h-4 w-4 mr-1" />
+                  Library
                 </CustomButton>
-              )}
+              </div>
             </div>
             
             {showReflectionForm ? (

@@ -16,6 +16,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from 'sonner';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ReflectionsPage from './pages/ReflectionsPage';
 
 const App: React.FC = () => {
   return (
@@ -52,6 +53,11 @@ const App: React.FC = () => {
           <Route path="/settings" element={
             <ProtectedRoute>
               <SettingsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/reflections" element={
+            <ProtectedRoute>
+              <ReflectionsPage />
             </ProtectedRoute>
           } />
           
