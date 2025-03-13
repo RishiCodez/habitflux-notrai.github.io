@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -60,7 +61,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           photoURL: user.photoURL || undefined
         });
       } else {
-        setCurrentUser(null);
+        // Check for guest user in localStorage
+        try {
+          const storedGuestUser = localStorage.getItem('guestUser');
+          if (storedGuestUser) {
+            const guestUser = JSON.parse(storedGuestUser);
+            if (guestUser && guestUser.isGuest) {
+              setCurrentUser(guestUser);
+            } else {
+              setCurrentUser(null);
+            }
+          } else {
+            setCurrentUser(null);
+          }
+        } catch (error) {
+          console.error('Error retrieving guest user from localStorage:', error);
+          setCurrentUser(null);
+        }
       }
       setLoading(false);
     });
@@ -122,6 +139,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const continueAsGuest = async () => {
     try {
       setLoading(true);
+      // Clear any existing guest user to prevent conflicts
+      localStorage.removeItem('guestUser');
       
       const guestUser: User = {
         uid: `guest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -129,12 +148,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isGuest: true
       };
       
-      setCurrentUser(guestUser);
-      
+      // Store guest user in localStorage
       localStorage.setItem('guestUser', JSON.stringify(guestUser));
       
-      toast.success('You have access to the Pomodoro timer as a guest user');
+      // Set current user state
+      setCurrentUser(guestUser);
       
+      // Show success message
+      toast.success('You now have access to the Pomodoro timer as a guest user');
+      
+      // Navigate to pomodoro page
       navigate('/pomodoro', { replace: true });
       
     } catch (error) {
@@ -160,6 +183,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await auth.signOut();
       }
       
+      // Clear guest user from localStorage
+      if (currentUser?.isGuest) {
+        localStorage.removeItem('guestUser');
+      }
+      
       setCurrentUser(null);
       navigate('/login', { replace: true });
       toast.success('Logged out successfully');
@@ -171,21 +199,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    try {
-      const storedGuestUser = localStorage.getItem('guestUser');
-      
-      if (storedGuestUser && !currentUser) {
-        const guestUser = JSON.parse(storedGuestUser);
-        if (guestUser && guestUser.isGuest) {
-          setCurrentUser(guestUser);
-        }
-      }
-    } catch (error) {
-      console.error('Error retrieving guest user from localStorage:', error);
-    }
-  }, [currentUser]);
 
   const value = {
     currentUser,

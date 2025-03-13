@@ -17,15 +17,18 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     setAuthError(null);
+    
+    // Clear any existing guest user in localStorage when arriving on login page
+    localStorage.removeItem('guestUser');
   }, []);
   
   useEffect(() => {
     if (currentUser) {
       // Redirect authenticated users to the appropriate page
       if (currentUser.isGuest) {
-        navigate('/pomodoro');
+        navigate('/pomodoro', { replace: true });
       } else {
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }
     }
   }, [currentUser, navigate]);

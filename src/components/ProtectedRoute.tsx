@@ -34,13 +34,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, guestAllowed 
     return <Navigate to="/login" />;
   }
   
-  // Allow access if the user is not a guest or if the route allows guests
-  if (!currentUser.isGuest || guestAllowed) {
-    return <>{children}</>;
+  // If user is a guest and trying to access a restricted page, redirect to pomodoro
+  if (currentUser.isGuest && !guestAllowed) {
+    return <Navigate to="/pomodoro" replace />;
   }
   
-  // If user is a guest and the route doesn't allow guests, redirect to pomodoro
-  return <Navigate to="/pomodoro" replace />;
+  // Allow access if the route allows guests or user is not a guest
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
