@@ -1,10 +1,12 @@
-
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth } from '../utils/firebase';
+import { toast } from 'sonner';
 
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -14,18 +16,34 @@ const SignupPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const { continueAsGuest, signInWithGoogle, loading, firebaseInitialized } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
     if (password !== confirmPassword) {
-      setError("Passwords don't match");
+      setError("Passwords don't match');
       return;
     }
     
-    // You can add signup functionality here if needed
-    console.log('Signup attempted with:', email);
+    try {
+      if (!auth) {
+        throw new Error('Firebase is not initialized');
+      }
+      
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      const displayName = email.split('@')[0];
+      await updateProfile(user, { displayName });
+      
+      toast.success('Account created successfully!');
+      navigate('/dashboard', { replace: true });
+    } catch (error: any) {
+      console.error('Error creating account:', error);
+      setError(error.message || 'Failed to create account');
+    }
   };
 
   const handleContinueAsGuest = async () => {

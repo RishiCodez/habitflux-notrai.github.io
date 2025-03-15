@@ -1,4 +1,3 @@
-
 import { 
   ref, 
   set, 
@@ -432,7 +431,7 @@ export const getInvitationsForUser = async (userEmail: string): Promise<any[]> =
 };
 
 export const generateShareableLink = (listId: string) => {
-  // Use habitflux.notrai.cloud domain format for sharing links
+  // Always use habitflux.notrai.cloud domain format for sharing links
   return `https://habitflux.notrai.cloud/${listId}`;
 };
 

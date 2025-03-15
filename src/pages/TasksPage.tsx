@@ -101,7 +101,7 @@ const TasksPage: React.FC = () => {
     }
     
     const urlSharedListId = getSharedListIdFromUrl();
-    if (urlSharedListId) {
+    if (urlSharedListId && location.search.includes('shared=')) {
       console.log("Found shared list ID in URL query:", urlSharedListId);
       setSharedListId(urlSharedListId);
     } else if (location.state?.sharedListId) {

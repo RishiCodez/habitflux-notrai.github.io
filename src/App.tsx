@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import { AuthProvider } from './contexts/AuthContext';
@@ -19,6 +19,11 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ReflectionsPage from './pages/ReflectionsPage';
 
 const App: React.FC = () => {
+  // Set document title to Habitflux
+  useEffect(() => {
+    document.title = "Habitflux";
+  }, []);
+  
   return (
     <Router>
       <AuthProvider>
