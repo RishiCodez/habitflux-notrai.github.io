@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,7 +24,7 @@ const SignupPage: React.FC = () => {
     setError('');
     
     if (password !== confirmPassword) {
-      setError("Passwords don't match');
+      setError("Passwords don't match");
       return;
     }
     
