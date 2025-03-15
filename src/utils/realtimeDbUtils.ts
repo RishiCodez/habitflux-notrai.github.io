@@ -437,7 +437,9 @@ export const getInvitationsForUser = async (userEmail: string): Promise<any[]> =
 
 export const generateShareableLink = (listId: string) => {
   // Always use habitflux.notrai.cloud domain format for sharing links
-  return `https://habitflux.notrai.cloud/${listId}`;
+  // Ensure the listId is properly formatted (no slashes, etc.)
+  const cleanListId = listId.replace(/[^\w-]/g, '');
+  return `https://habitflux.notrai.cloud/${cleanListId}`;
 };
 
 export const getSharedListIdFromUrl = () => {

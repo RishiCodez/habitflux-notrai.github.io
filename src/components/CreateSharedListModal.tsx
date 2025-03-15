@@ -4,8 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Users, List } from 'lucide-react';
-import { createSharedTaskList } from '../utils/realtimeDbUtils';
+import { Users, List, Copy, CheckCircle } from 'lucide-react';
+import { createSharedTaskList, generateShareableLink } from '../utils/realtimeDbUtils';
 import { toast } from 'sonner';
 
 interface CreateSharedListModalProps {
@@ -25,6 +25,8 @@ const CreateSharedListModal: React.FC<CreateSharedListModalProps> = ({
   const [listDescription, setListDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [step, setStep] = useState(1); // 1 = initial form, 2 = creating, 3 = success
+  const [createdListId, setCreatedListId] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   const handleCreateList = async () => {
     if (!listName.trim()) {
@@ -41,6 +43,9 @@ const CreateSharedListModal: React.FC<CreateSharedListModalProps> = ({
         currentUserEmail, 
         listDescription
       );
+      
+      // Store the created list ID
+      setCreatedListId(newSharedListId);
       
       toast.success(`"${listName}" collaborative list has been created.`);
       
@@ -63,7 +68,27 @@ const CreateSharedListModal: React.FC<CreateSharedListModalProps> = ({
     setListName('');
     setListDescription('');
     setStep(1);
+    setCreatedListId(null);
+    setIsCopied(false);
     onClose();
+  };
+  
+  const handleCopyLink = () => {
+    if (!createdListId) return;
+    
+    const shareableLink = generateShareableLink(createdListId);
+    
+    // Use navigator.clipboard API to copy to clipboard
+    navigator.clipboard.writeText(shareableLink)
+      .then(() => {
+        setIsCopied(true);
+        toast.success('Link copied to clipboard!');
+        setTimeout(() => setIsCopied(false), 3000);
+      })
+      .catch(err => {
+        console.error('Failed to copy link: ', err);
+        toast.error('Failed to copy link to clipboard');
+      });
   };
 
   return (
@@ -139,6 +164,38 @@ const CreateSharedListModal: React.FC<CreateSharedListModalProps> = ({
                 <li>Invite collaborators to work with you</li>
                 <li>Share the list with a link</li>
               </ul>
+            </div>
+            
+            <div className="space-y-2 mt-4">
+              <label className="text-sm font-medium">Shareable Link</label>
+              <div className="flex items-center gap-2">
+                <Input 
+                  value={createdListId ? generateShareableLink(createdListId) : ''} 
+                  readOnly 
+                  className="text-xs sm:text-sm" 
+                />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCopyLink}
+                  className="shrink-0 flex items-center"
+                >
+                  {isCopied ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Share this link to invite others to your collaborative list
+              </p>
             </div>
           </div>
         )}

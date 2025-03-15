@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { Copy, Mail, Share2, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import { Copy, Mail, Share2, X, CheckCircle } from 'lucide-react';
 
 interface ShareOptionsProps {
   isOpen: boolean;
@@ -23,22 +24,17 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
   listName
 }) => {
   const [isCopied, setIsCopied] = useState(false);
-  const { toast } = useToast();
 
   const getShareableLink = () => {
     if (isSharedList && sharedListLink) {
-      // Extract list ID from the URL
-      let listId;
-      
-      if (sharedListLink.includes('?shared=')) {
-        // Extract from query param
-        listId = new URLSearchParams(sharedListLink.split('?')[1]).get('shared') || '';
+      // Make sure we have a clean URL format
+      if (sharedListLink.includes('/')) {
+        // Extract the list ID from the path
+        const listId = sharedListLink.split('/').pop() || '';
+        return `https://habitflux.notrai.cloud/${listId}`;
       } else {
-        // Extract from path segment
-        listId = sharedListLink.split('/').pop() || '';
+        return `https://habitflux.notrai.cloud/${sharedListLink}`;
       }
-      
-      return `https://habitflux.notrai.cloud/${listId}`;
     }
     return '';
   };
@@ -59,23 +55,31 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
   };
 
   const handleCopyToClipboard = () => {
-    if (isSharedList) {
-      // For shared lists, copy only the link
-      const shareableLink = getShareableLink();
-      navigator.clipboard.writeText(shareableLink);
-    } else {
-      // For regular lists, copy the task list text
-      const text = getTaskListText();
-      navigator.clipboard.writeText(text);
+    try {
+      const textToCopy = isSharedList ? getShareableLink() : getTaskListText();
+      
+      if (!textToCopy) {
+        toast.error("Nothing to copy. Link not available.");
+        return;
+      }
+      
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+          setIsCopied(true);
+          toast.success(isSharedList 
+            ? "Shareable link copied to clipboard" 
+            : "The task list has been copied to your clipboard");
+          
+          setTimeout(() => setIsCopied(false), 3000);
+        })
+        .catch((err) => {
+          console.error("Failed to copy: ", err);
+          toast.error("Failed to copy to clipboard");
+        });
+    } catch (error) {
+      console.error("Copy error:", error);
+      toast.error("Failed to copy to clipboard");
     }
-    
-    setIsCopied(true);
-    toast({
-      title: "Copied to clipboard",
-      description: isSharedList ? "Shareable link copied to clipboard" : "The task list has been copied to your clipboard",
-    });
-    
-    setTimeout(() => setIsCopied(false), 2000);
   };
 
   const handleShareViaTwitter = () => {
@@ -112,6 +116,36 @@ const ShareOptions: React.FC<ShareOptionsProps> = ({
         </DialogHeader>
         
         <div className="py-4">
+          {isSharedList && sharedListLink && (
+            <div className="mb-4 space-y-2">
+              <label className="text-sm font-medium">Shareable Link</label>
+              <div className="flex items-center gap-2">
+                <Input value={getShareableLink()} readOnly className="text-xs sm:text-sm" />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCopyToClipboard}
+                  className="shrink-0 flex items-center"
+                >
+                  {isCopied ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Share this link to collaborate on "{listName}"
+              </p>
+            </div>
+          )}
+          
           <div className="flex flex-col gap-4">
             <Button 
               variant="outline" 
