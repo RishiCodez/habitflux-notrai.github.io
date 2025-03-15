@@ -9,6 +9,7 @@ import {
   DatabaseReference 
 } from 'firebase/database';
 import { database } from './firebase';
+import { toast } from 'sonner';
 
 // Helper function to check database connection
 const checkDatabaseConnection = () => {
@@ -56,7 +57,7 @@ export const unsubscribeFromSharedList = (listRef: DatabaseReference) => {
 };
 
 // Shared task list operations
-export const createSharedTaskList = async (name: string, createdBy: string) => {
+export const createSharedTaskList = async (name: string, createdBy: string, description: string = '') => {
   try {
     const db = checkDatabaseConnection();
     
@@ -71,6 +72,7 @@ export const createSharedTaskList = async (name: string, createdBy: string) => {
     await set(newListRef, {
       id: listId,
       name,
+      description,
       createdBy,
       createdAt: new Date().toISOString(),
       collaborators: [createdBy],
@@ -83,8 +85,11 @@ export const createSharedTaskList = async (name: string, createdBy: string) => {
   } catch (error: any) {
     console.error('Error creating shared task list:', error);
     
-    // Enhanced error handling for permission issues
-    if (error.message && error.message.includes('PERMISSION_DENIED')) {
+    // Enhanced error handling for permission and operation issues
+    if (error.code === 'auth/operation-not-allowed') {
+      toast.error('This operation is not allowed. Please make sure you have the necessary permissions.');
+      throw new Error('Operation not allowed. Please log in again or contact support.');
+    } else if (error.message && error.message.includes('PERMISSION_DENIED')) {
       throw new Error(
         'Permission denied. You need to update your Firebase Realtime Database security rules.\n\n' +
         'Go to the Firebase Console > Realtime Database > Rules and set the rules to:\n\n' +
@@ -450,4 +455,26 @@ export const getSharedListIdFromUrl = () => {
   }
   
   return null;
+};
+
+export const getSharedListDetails = async (listId: string): Promise<any> => {
+  try {
+    const db = checkDatabaseConnection();
+    const listRef = ref(db, `sharedLists/${listId}`);
+    
+    return new Promise((resolve, reject) => {
+      onValue(listRef, (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+          reject(new Error('Shared list not found'));
+          return;
+        }
+        
+        resolve(data);
+      }, { onlyOnce: true });
+    });
+  } catch (error) {
+    console.error('Error getting shared list details:', error);
+    throw error;
+  }
 };

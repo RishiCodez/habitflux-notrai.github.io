@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,7 +23,7 @@ const SignupPage: React.FC = () => {
     setError('');
     
     if (password !== confirmPassword) {
-      setError("Passwords don't match");
+      setError("Passwords don't match');
       return;
     }
     
@@ -43,7 +42,20 @@ const SignupPage: React.FC = () => {
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
       console.error('Error creating account:', error);
-      setError(error.message || 'Failed to create account');
+      let errorMessage = error.message || 'Failed to create account';
+      
+      // Handle specific Firebase auth errors
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please use a different email or login.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Please use a stronger password (at least 6 characters).';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Email/password registration is not enabled. Please contact support.';
+      }
+      
+      setError(errorMessage);
     }
   };
 

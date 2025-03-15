@@ -7,7 +7,10 @@ import TaskForm from '../components/TaskForm';
 import CustomButton from '../components/CustomButton';
 import SharedTaskList from '../components/SharedTaskList';
 import ShareOptions from '../components/ShareOptions';
+import CreateSharedListModal from '../components/CreateSharedListModal';
+import CollaborationModal from '../components/CollaborationModal';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   saveTasks, 
   loadTasks, 
@@ -45,8 +48,6 @@ const defaultLists: TaskList[] = [
   { id: 'shopping', name: 'Shopping', color: 'bg-green-500' }
 ];
 
-const currentUserEmail = 'user@example.com';
-
 const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
@@ -62,15 +63,19 @@ const TasksPage: React.FC = () => {
   const [newListColor, setNewListColor] = useState('bg-blue-500');
   const [showTour, setShowTour] = useState(false);
   const [showSharedListModal, setShowSharedListModal] = useState(false);
-  const [newSharedListName, setNewSharedListName] = useState('');
   const [sharedListId, setSharedListId] = useState<string | null>(null);
   const [isCreatingSharedList, setIsCreatingSharedList] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const [showCollaborationModal, setShowCollaborationModal] = useState(false);
+  const [currentSharedList, setCurrentSharedList] = useState<any>(null);
   
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
+  const { currentUser } = useAuth();
+  
+  const currentUserEmail = currentUser?.email || 'guest@example.com';
 
   const loadInitialData = useCallback(async () => {
     const savedTasks = loadTasks();
@@ -254,74 +259,59 @@ const TasksPage: React.FC = () => {
     });
   };
   
-  const handleCreateSharedList = async () => {
-    if (!newSharedListName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a name for your shared list",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleSharedListCreated = (listId: string, listName: string) => {
+    const newList = {
+      id: listId,
+      name: listName,
+      color: 'bg-indigo-500',
+      isShared: true
+    };
     
-    setIsCreatingSharedList(true);
+    const updatedLists = [...taskLists, newList];
+    setTaskLists(updatedLists);
+    saveTaskLists(updatedLists);
     
-    try {
-      const userId = currentUserEmail;
-      const newSharedListId = await createSharedTaskList(newSharedListName, userId);
-      
-      const newList = {
-        id: newSharedListId,
-        name: newSharedListName,
-        color: 'bg-indigo-500',
-        isShared: true
-      };
-      
-      const updatedLists = [...taskLists, newList];
-      setTaskLists(updatedLists);
-      saveTaskLists(updatedLists);
-      
-      setSharedListId(newSharedListId);
-      setShowSharedListModal(false);
-      
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.set('shared', newSharedListId);
-      window.history.pushState({}, '', newUrl.toString());
-      
-      toast({
-        title: "Shared list created",
-        description: `"${newSharedListName}" collaborative list has been created.`
-      });
-    } catch (error) {
-      toast({
-        title: "Error creating shared list",
-        description: "There was a problem creating your shared list",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCreatingSharedList(false);
-      setNewSharedListName('');
-    }
+    setSharedListId(listId);
+    setCurrentSharedList({
+      id: listId,
+      name: listName
+    });
+    
+    navigate(`/${listId}`, { replace: true });
+    
+    setTimeout(() => {
+      setShowCollaborationModal(true);
+    }, 500);
   };
   
   const handleBackToMyTasks = () => {
     setSharedListId(null);
+    setCurrentSharedList(null);
     
-    const url = new URL(window.location.href);
-    url.searchParams.delete('shared');
-    window.history.replaceState({}, '', url.toString());
+    navigate('/tasks', { replace: true });
   };
   
   const handleAcceptInvitation = (listId: string) => {
     setSharedListId(listId);
     
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('shared', listId);
-    window.history.pushState({}, '', newUrl.toString());
+    navigate(`/${listId}`, { replace: true });
   };
   
   const handleShareCurrentList = () => {
-    setShowShareOptions(true);
+    if (sharedListId) {
+      const sharedList = taskLists.find(list => list.id === sharedListId);
+      if (sharedList) {
+        setCurrentSharedList({
+          id: sharedListId,
+          name: sharedList.name
+        });
+        setShowCollaborationModal(true);
+      } else {
+        setShowShareOptions(true);
+      }
+    } else {
+      setShowShareOptions(true);
+    }
   };
   
   return (
@@ -330,7 +320,9 @@ const TasksPage: React.FC = () => {
       
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">
-          {sharedListId ? 'Collaborative Tasks' : 'Task Management'}
+          {sharedListId ? (
+            currentSharedList ? currentSharedList.name : 'Collaborative Tasks'
+          ) : 'Task Management'}
         </h1>
         
         <div className="flex space-x-2">
@@ -592,52 +584,28 @@ const TasksPage: React.FC = () => {
         </>
       )}
       
-      <Dialog open={showSharedListModal} onOpenChange={setShowSharedListModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Users className="mr-2 h-5 w-5" />
-              Create Collaborative Task List
-            </DialogTitle>
-            <DialogDescription>
-              Create a shared task list that you can collaborate on with others in real-time.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <div className="flex flex-col gap-2">
-              <label htmlFor="shared-list-name" className="text-sm font-medium">
-                List Name
-              </label>
-              <Input
-                id="shared-list-name"
-                value={newSharedListName}
-                onChange={(e) => setNewSharedListName(e.target.value)}
-                placeholder="Enter a name for your shared list"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSharedListModal(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreateSharedList}
-              disabled={isCreatingSharedList || !newSharedListName.trim()}
-            >
-              {isCreatingSharedList ? 'Creating...' : 'Create Shared List'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateSharedListModal 
+        isOpen={showSharedListModal}
+        onClose={() => setShowSharedListModal(false)}
+        onListCreated={handleSharedListCreated}
+        currentUserEmail={currentUserEmail}
+      />
+      
+      <CollaborationModal
+        isOpen={showCollaborationModal}
+        onClose={() => setShowCollaborationModal(false)}
+        sharedListId={currentSharedList?.id || null}
+        sharedListName={currentSharedList?.name || ""}
+        listData={null}
+        onDataUpdate={() => {}} // We'll reload data when needed
+      />
       
       <ShareOptions
         isOpen={showShareOptions}
         onClose={() => setShowShareOptions(false)}
         taskList={filteredTasks}
         isSharedList={!!sharedListId}
-        sharedListLink={sharedListId ? window.location.href : undefined}
+        sharedListLink={sharedListId ? `https://habitflux.notrai.cloud/${sharedListId}` : undefined}
         listName={listFilter ? taskLists.find(list => list.id === listFilter)?.name || "My Tasks" : "My Tasks"}
       />
     </AppLayout>
